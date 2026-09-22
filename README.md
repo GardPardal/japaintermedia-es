@@ -1,4 +1,4 @@
-﻿# JAPA Intermediações - Portal Automotivo & Gestão de Estoque
+# JAPA Intermediações - Portal Automotivo & Gestão de Estoque
 
 Portal automotivo oficial da **JAPA Intermediações** (Wenceslau Braz - PR), especializado em compra, venda, troca e financiamento de veículos seminovos e novos com procedência garantida e laudo cautelar 100% aprovado.
 
@@ -9,7 +9,7 @@ Portal automotivo oficial da **JAPA Intermediações** (Wenceslau Braz - PR), es
 - **Frontend:** React 18 + Vite + Tailwind CSS (Design nipo-moderno sofisticado fiel ao mockup oficial).
 - **Backend:** API REST em PHP 8 nativo (`api/index.php`) compatível com LiteSpeed, Apache e cPanel.
 - **Banco de Dados:** MySQL (`japa`) com suporte a múltiplos ambientes e fallback automático em `data/vehicles.json`.
-- **Deploy Contínuo:** Integrado via Git Deploy na hospedagem **Hostoo** (`japainter.site` / IP `200.9.22.2`) e repositório GitHub.
+- **Deploy Contínuo:** Integrado via Git Deploy na hospedagem **Hostoo** e repositório GitHub.
 
 ---
 
@@ -28,7 +28,7 @@ Portal automotivo oficial da **JAPA Intermediações** (Wenceslau Braz - PR), es
 O repositório está conectado ao **Deploy via GIT da Hostoo**:
 1. Toda vez que um `git push` é realizado no branch `main` deste repositório, a Hostoo atualiza os arquivos do site automaticamente.
 2. Você pode editar arquivos diretamente pelo GitHub (ex: alterar preços ou cadastrar veículos em `data/vehicles.json`, ou modificar textos e imagens) e a hospedagem sincronizará as alterações.
-3. O assistente de IA (Antigravity) possui ferramentas locais e servidor MCP remoto para continuar evoluindo o projeto diretamente em sincronia com o GitHub e a Hostoo.
+3. O assistente de IA possui ferramentas locais para continuar evoluindo o projeto em total sincronia com o GitHub e a Hostoo.
 
 ---
 
@@ -55,9 +55,8 @@ Os arquivos gerados em `dist/` são copiados para a raiz do repositório para se
 
 ## Painel Administrativo
 
-- **Acesso direto:** `https://japainter.site/admin` (ou botão discreto no rodapé do site).
-- **Usuários cadastrados:** `admin` ou `japa`
-- **Senhas:** `japa2026` / `brenza2026` / `qfzY43Wq`
+- **Acesso direto:** `/admin` (ou botão discreto no rodapé do site).
+- **Acesso seguro:** Autenticação gerenciada via tabela de usuários no MySQL ou variáveis de ambiente configuradas no servidor de hospedagem. Consulte `.env.example` para referências.
 
 ---
 

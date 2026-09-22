@@ -1,4 +1,4 @@
-﻿# Dependências
+# Dependências
 node_modules/
 
 # Pastas de build local e cache do assistente
@@ -16,6 +16,12 @@ verify_*
 inspect_*
 upload_single.php
 render_logo.ps1
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+*.env
+!.env.example
 
 # Arquivos do sistema operacional
 .DS_Store
