@@ -29,5 +29,14 @@
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
 </IfModule>
 
+# Desabilitar cache no index.html para que atualizações apareçam instantaneamente no navegador
+<FilesMatch "^(index\.html)?$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
+
 # Charset padrão UTF-8
 AddDefaultCharset UTF-8
