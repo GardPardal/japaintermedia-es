@@ -1,0 +1,33 @@
+# Configuração Apache / LiteSpeed para Hostinger, HostGator e cPanel
+# Brenza Multimarcas - Sistema Automotivo PHP
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 1. Roteamento de todas as chamadas /api para a API PHP
+    RewriteCond %{REQUEST_URI} ^/api(/.*)?$ [NC]
+    RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
+
+    # 2. Servir arquivos e pastas existentes diretamente (CSS, JS, imagens, logo.jpg)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 3. Qualquer outra rota (ex: /admin, /veiculo/...) vai para o index.html da aplicação
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Bloqueio de arquivos sensíveis
+<FilesMatch "^\.(env|git|htaccess|htpasswd)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Otimização de Cache e Compressão
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Charset padrão UTF-8
+AddDefaultCharset UTF-8

@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F7F7F7] text-[#101010] font-sans antialiased;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F1F1;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E50914;
+}
+
+/* Subtle Japanese Seigaiha Pattern for Footer & Accents */
+.bg-seigaiha {
+  background-color: #101010;
+  background-image: radial-gradient(circle at 100% 150%, #101010 24%, #1a1a1a 25%, #1a1a1a 28%, #101010 29%, #101010 36%, #1a1a1a 37%, #1a1a1a 40%, #101010 41%, #101010 48%, #1a1a1a 49%, #1a1a1a 52%, #101010 53%, #101010 60%, #1a1a1a 61%, #1a1a1a 64%, #101010 65%),
+    radial-gradient(circle at 0% 150%, #101010 24%, #1a1a1a 25%, #1a1a1a 28%, #101010 29%, #101010 36%, #1a1a1a 37%, #1a1a1a 40%, #101010 41%, #101010 48%, #1a1a1a 49%, #1a1a1a 52%, #101010 53%, #101010 60%, #1a1a1a 61%, #1a1a1a 64%, #101010 65%),
+    radial-gradient(circle at 50% 100%, #101010 10%, #1a1a1a 11%, #1a1a1a 13%, #101010 14%, #101010 20%, #1a1a1a 21%, #1a1a1a 23%, #101010 24%, #101010 30%, #1a1a1a 31%, #1a1a1a 33%, #101010 34%, #101010 40%, #1a1a1a 41%, #1a1a1a 43%, #101010 44%);
+  background-size: 80px 40px;
+}
+
+/* Card Transitions */
+.car-card-image {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.group:hover .car-card-image {
+  transform: scale(1.03);
+}

@@ -1,0 +1,22 @@
+﻿# Dependências
+node_modules/
+
+# Pastas de build local e cache do assistente
+.gemini/
+dist/
+public_html/
+*.zip
+
+# Scripts temporários de diagnóstico
+*.log
+temp_*
+test_*
+check_*
+verify_*
+inspect_*
+upload_single.php
+render_logo.ps1
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

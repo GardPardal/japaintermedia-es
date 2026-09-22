@@ -1,0 +1,28 @@
+[
+  {
+    "id": "lead-1790013125085",
+    "tipo": "proposta",
+    "nome": "Rodrigo Mendonça",
+    "telefone": "43988776655",
+    "email": "",
+    "veiculoId": "brz-01",
+    "veiculoNome": "Toyota Corolla",
+    "mensagem": "Aceita proposta à vista?",
+    "simulacao": null,
+    "veiculoTroca": null,
+    "status": "Novo",
+    "data": "2026-09-21T17:52:05.085Z"
+  },
+  {
+    "id": "lead-1",
+    "tipo": "proposta",
+    "nome": "Carlos Eduardo Silveira",
+    "telefone": "(43) 99122-3344",
+    "email": "carlos.silveira@email.com",
+    "veiculoId": "brz-01",
+    "veiculoNome": "Toyota Corolla 2.0 XEi",
+    "mensagem": "Gostaria de agendar um test drive e saber a avaliação do meu seminovo na troca.",
+    "status": "Novo",
+    "data": "2026-09-20T14:30:00.000Z"
+  }
+]
