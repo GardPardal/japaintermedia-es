@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Calendar, Gauge, Fuel, Cog, ShieldCheck, 
   MessageCircle, Calculator, ArrowRight, Car, CheckCircle2, Info, Share2
@@ -100,16 +100,9 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
   };
 
   const shareVehicle = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${vehicle.marca} ${vehicle.modelo} - JAPA Intermediações`,
-        text: `Confira este ${vehicle.marca} ${vehicle.modelo} na JAPA Intermediações por ${formatBRL(vehicle.preco)}`,
-        url: window.location.href
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado para a área de transferência!');
-    }
+    const shareText = `🚗 Olha este ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${vehicle.anoModelo}) na JAPA Intermediações por ${formatBRL(vehicle.preco)} em Wenceslau Braz - PR!\n\nConfira as fotos e detalhes no site:\nhttps://japainter.site/`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const primaryPhotos = vehicle.fotos && vehicle.fotos.length > 0 ? vehicle.fotos : ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80'];
@@ -300,6 +293,15 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
                 >
                   <MessageCircle className="w-5 h-5" />
                   <span>Negociar pelo WhatsApp</span>
+                </button>
+
+                <button
+                  onClick={shareVehicle}
+                  type="button"
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-200"
+                >
+                  <Share2 className="w-4 h-4 text-emerald-600" />
+                  <span>Compartilhar Veículo no WhatsApp</span>
                 </button>
               </div>
             </div>
