@@ -1,0 +1,11 @@
+# robots.txt para JAPA Intermediações (https://japainter.site)
+User-agent: *
+Allow: /
+Allow: /assets/
+Allow: /uploads/
+Disallow: /admin
+Disallow: /api/
+Disallow: /data/
+
+# Sitemap XML oficial
+Sitemap: https://japainter.site/sitemap.xml

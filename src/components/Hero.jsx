@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { ArrowRight, ShieldCheck, Handshake, Award } from 'lucide-react';
 
 export default function Hero({ onExploreStock, onSellCar }) {
@@ -28,6 +28,11 @@ export default function Hero({ onExploreStock, onSellCar }) {
           </div>
           <div className="max-w-lg lg:max-w-xl space-y-5">
             
+            {/* Local SEO Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#E50914] text-[11px] font-bold uppercase tracking-wider">
+              <span>Loja de Carros em Wenceslau Braz - PR</span>
+            </div>
+
             {/* Title matching mockup */}
             <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black text-[#101010] tracking-tight leading-[1.15]">
               Seu próximo <br />
@@ -36,7 +41,7 @@ export default function Hero({ onExploreStock, onSellCar }) {
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base text-[#444444] font-medium leading-relaxed max-w-md">
-              Compra, venda, troca e financiamento com segurança.
+              Compra, venda, troca e financiamento com segurança e as melhores condições de Wenceslau Braz e região.
             </p>
 
             {/* CTA Buttons */}

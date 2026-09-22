@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { MapPin, Phone, Clock, ShieldCheck, Award, Users, Navigation } from 'lucide-react';
 
 export default function AboutSection() {
@@ -19,11 +19,11 @@ export default function AboutSection() {
             </h2>
 
             <p className="text-[#5F6368] text-base leading-relaxed">
-              Especializada em consultoria automotiva, compra, venda e intermediação de veículos selecionados, a <strong className="text-[#101010]">JAPA Intermediações</strong> oferece uma experiência de negociação segura, transparente e altamente vantajosa.
+              Consolidada como a principal <strong className="text-[#101010]">loja de carros e seminovos em Wenceslau Braz - PR</strong>, a <strong className="text-[#101010]">JAPA Intermediações</strong> atende clientes de toda a região do Norte Pioneiro (Arapoti, Ibaiti, Jaguariaíva, Santana do Itararé, Tomazina e Siqueira Campos) com foco em compra, venda, troca com avaliação justa e financiamento bancário facilitado.
             </p>
 
             <p className="text-[#5F6368] text-base leading-relaxed">
-              Cada veículo que intermediamos passa por uma rigorosa checagem mecânica, estrutural e documental com laudo cautelar. Nosso compromisso é entregar a você e sua família não apenas um carro de alto padrão, mas tranquilidade, procedência e as melhores taxas de financiamento do mercado.
+              Cada veículo que intermediamos passa por uma rigorosa checagem mecânica, estrutural e documental com laudo cautelar. Nosso compromisso é entregar a você e sua família não apenas um carro de procedência garantida, mas segurança, transparência e as melhores condições de pagamento da região.
             </p>
 
             {/* Core Values Pillars */}

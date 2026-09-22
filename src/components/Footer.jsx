@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { MapPin, MessageCircle, Instagram, Facebook, Youtube, Lock } from 'lucide-react';
 import Logo from './Logo.jsx';
 
@@ -22,7 +22,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
           <div className="lg:col-span-2 space-y-3">
             <Logo variant="white" className="h-14 w-fit" />
             <p className="text-slate-400 text-xs font-normal">
-              Conectando você ao melhor negócio!
+              Sua loja de carros e seminovos em Wenceslau Braz - PR. Conectando você ao melhor negócio com procedência e garantia!
             </p>
           </div>
 
@@ -44,15 +44,15 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
           {/* Col 3: Endereço */}
           <div className="space-y-2.5">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">
-              Endereço
+              Endereço & Atendimento
             </h4>
             <div className="space-y-1 text-xs">
-              <div className="flex items-center gap-1.5 text-white font-medium">
-                <MapPin className="w-3.5 h-3.5 text-[#E50914] flex-shrink-0" />
-                <span>Wenceslau Braz - PR</span>
+              <div className="flex items-start gap-1.5 text-white font-medium">
+                <MapPin className="w-3.5 h-3.5 text-[#E50914] flex-shrink-0 mt-0.5" />
+                <span>Avenida Avelino Vieira, 68 - Centro<br /><span className="text-slate-400">Wenceslau Braz - PR</span></span>
               </div>
               <p className="text-slate-400 text-[11px] pt-1">
-                Atendimento de segunda a sábado
+                Atendimento: Seg à Sex 08h-18h | Sáb 08h-12h30
               </p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
 
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} JAPA Intermediações. Wenceslau Braz - PR. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} JAPA Intermediações • Loja de Carros em Wenceslau Braz - PR. Todos os direitos reservados.</p>
           <button
             type="button"
             onClick={onOpenAdmin}
