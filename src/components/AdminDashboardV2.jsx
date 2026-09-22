@@ -118,6 +118,31 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
     }
   }
 
+  async function deleteVehicle(vehicle) {
+    if (!vehicle || !vehicle.id) return;
+    const vehicleName = `${vehicle.marca || ''} ${vehicle.modelo || ''}`.trim() || `ID ${vehicle.id}`;
+    const confirmed = window.confirm(`Tem certeza que deseja excluir o veículo "${vehicleName}"? Esta ação removerá o anúncio do site e não pode ser desfeita.`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/vehicles/${vehicle.id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Falha ao excluir veículo.');
+      }
+      if (editorVehicle && String(editorVehicle.id) === String(vehicle.id)) {
+        setEditorVehicle(undefined);
+      }
+      await loadData();
+      onVehicleUpdated?.();
+      setNotice(`Veículo "${vehicleName}" excluído com sucesso.`);
+    } catch (error) {
+      setNotice('Erro ao excluir veículo. Verifique a conexão e tente novamente.');
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex overflow-hidden bg-[#f5f6f8] text-[#111]">
       <aside className={`absolute inset-y-0 left-0 z-50 w-64 bg-[#111315] text-white transition-transform lg:relative lg:translate-x-0 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -176,7 +201,7 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
             </section>
 
             {loading ? <div className="flex min-h-[320px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#e50914]" /></div> : null}
-            {!loading && tab === 'stock' && <StockView vehicles={filtered} query={query} setQuery={setQuery} status={status} setStatus={setStatus} onRefresh={loadData} onEdit={setEditorVehicle} onChannels={setSelectedVehicle} />}
+            {!loading && tab === 'stock' && <StockView vehicles={filtered} query={query} setQuery={setQuery} status={status} setStatus={setStatus} onRefresh={loadData} onEdit={setEditorVehicle} onChannels={setSelectedVehicle} onDelete={deleteVehicle} />}
             {!loading && tab === 'overview' && <Overview stats={stats} vehicles={vehicles} leads={leads} onOpenStock={() => setTab('stock')} />}
             {!loading && tab === 'leads' && <LeadView leads={leads} />}
             {!loading && tab === 'portals' && <PortalView />}
@@ -193,7 +218,7 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
       </div>
 
       {selectedVehicle && <ChannelDrawer vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} />}
-      {editorVehicle !== undefined && <VehicleEditor vehicle={editorVehicle} saving={saving} onClose={() => setEditorVehicle(undefined)} onSave={saveVehicle} />}
+      {editorVehicle !== undefined && <VehicleEditor vehicle={editorVehicle} saving={saving} onClose={() => setEditorVehicle(undefined)} onSave={saveVehicle} onDelete={deleteVehicle} />}
     </div>
   );
 }
@@ -203,26 +228,65 @@ function Metric({ label, value, icon: Icon, tone = 'slate' }) {
   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${tones[tone]}`}><Icon className="h-4 w-4" /></div><p className="text-xs font-semibold text-slate-500">{label}</p><p className="mt-0.5 text-2xl font-black">{value}</p></div>;
 }
 
-function StockView({ vehicles, query, setQuery, status, setStatus, onRefresh, onEdit, onChannels }) {
+function StockView({ vehicles, query, setQuery, status, setStatus, onRefresh, onEdit, onChannels, onDelete }) {
   return <>
     <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
       <div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar marca, modelo, versão ou código..." className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-[#e50914]" /></div>
       <div className="flex gap-2"><div className="relative flex-1 sm:flex-none"><Filter className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" /><select value={status} onChange={e => setStatus(e.target.value)} className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-8 text-sm font-semibold outline-none"><option value="todos">Todos</option><option value="Disponível">Disponíveis</option><option value="Reservado">Reservados</option><option value="Vendido">Vendidos</option></select></div><button onClick={onRefresh} className="rounded-xl border border-slate-200 p-2.5 hover:bg-slate-50" title="Atualizar"><RefreshCw className="h-4 w-4" /></button></div>
     </div>
-    {vehicles.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center"><Car className="mx-auto mb-3 h-8 w-8 text-slate-300" /><h3 className="font-black">Nenhum veículo encontrado</h3><p className="mt-1 text-sm text-slate-500">Altere os filtros ou cadastre um novo veículo.</p></div> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{vehicles.map(vehicle => <AdminVehicleCard key={vehicle.id} vehicle={vehicle} onEdit={() => onEdit(vehicle)} onChannels={() => onChannels(vehicle)} />)}</div>}
+    {vehicles.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center"><Car className="mx-auto mb-3 h-8 w-8 text-slate-300" /><h3 className="font-black">Nenhum veículo encontrado</h3><p className="mt-1 text-sm text-slate-500">Altere os filtros ou cadastre um novo veículo.</p></div> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{vehicles.map(vehicle => <AdminVehicleCard key={vehicle.id} vehicle={vehicle} onEdit={() => onEdit(vehicle)} onChannels={() => onChannels(vehicle)} onDelete={() => onDelete(vehicle)} />)}</div>}
   </>;
 }
 
-function AdminVehicleCard({ vehicle, onEdit, onChannels }) {
+function AdminVehicleCard({ vehicle, onEdit, onChannels, onDelete }) {
   const state = String(vehicle.status || 'Disponível');
   const statusClass = state === 'Disponível' ? 'bg-emerald-50 text-emerald-700' : state === 'Reservado' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600';
   const photo = vehicle.fotos?.[0] || '/veiculo-sedan.webp';
   return <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
-    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100"><img src={photo} alt={`${vehicle.marca} ${vehicle.modelo}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" /><span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-[11px] font-black shadow-sm ${statusClass}`}><StatusDot tone={state === 'Disponível' ? 'success' : state === 'Reservado' ? 'warning' : 'muted'} /> <span className="ml-1">{state}</span></span><button onClick={onEdit} className="absolute right-3 top-3 rounded-xl bg-white/95 p-2 text-slate-700 shadow"><Pencil className="h-4 w-4" /></button></div>
-    <div className="p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-base font-black">{vehicle.marca} {vehicle.modelo}</h3><p className="truncate text-xs text-slate-500">{vehicle.versao}</p></div><strong className="whitespace-nowrap text-base font-black">{money(vehicle.preco)}</strong></div>
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500"><span>{vehicle.anoFabricacao}/{vehicle.anoModelo}</span><span>{Number(vehicle.km || 0).toLocaleString('pt-BR')} km</span><span>{vehicle.cambio}</span></div>
-      <div className="mt-4 flex flex-wrap gap-1.5">{CHANNELS.slice(0, 5).map(channel => { const c = channelState(vehicle, channel.key); return <span key={channel.key} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600"><StatusDot tone={c.tone} />{channel.label}</span>; })}</div>
-      <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3"><button onClick={onEdit} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-black hover:bg-slate-50"><Pencil className="h-3.5 w-3.5" />Editar</button><button onClick={onChannels} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#e50914] py-2.5 text-xs font-black text-white hover:bg-[#bd0710]"><ExternalLink className="h-3.5 w-3.5" />Publicar</button></div>
+    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+      <img src={photo} alt={`${vehicle.marca} ${vehicle.modelo}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+      <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-[11px] font-black shadow-sm ${statusClass}`}>
+        <StatusDot tone={state === 'Disponível' ? 'success' : state === 'Reservado' ? 'warning' : 'muted'} /> <span className="ml-1">{state}</span>
+      </span>
+      <div className="absolute right-3 top-3 flex items-center gap-1.5">
+        <button onClick={onEdit} className="rounded-xl bg-white/95 p-2 text-slate-700 shadow hover:bg-white hover:text-black transition" title="Editar veículo">
+          <Pencil className="h-4 w-4" />
+        </button>
+        <button onClick={onDelete} className="rounded-xl bg-white/95 p-2 text-red-600 shadow hover:bg-red-50 hover:text-red-700 transition" title="Excluir veículo">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+    <div className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-black">{vehicle.marca} {vehicle.modelo}</h3>
+          <p className="truncate text-xs text-slate-500">{vehicle.versao}</p>
+        </div>
+        <strong className="whitespace-nowrap text-base font-black">{money(vehicle.preco)}</strong>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+        <span>{vehicle.anoFabricacao}/{vehicle.anoModelo}</span>
+        <span>{Number(vehicle.km || 0).toLocaleString('pt-BR')} km</span>
+        <span>{vehicle.cambio}</span>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {CHANNELS.slice(0, 5).map(channel => {
+          const c = channelState(vehicle, channel.key);
+          return <span key={channel.key} className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-600"><StatusDot tone={c.tone} />{channel.label}</span>;
+        })}
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
+        <button onClick={onEdit} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-50 transition" title="Editar informações">
+          <Pencil className="h-3.5 w-3.5" />Editar
+        </button>
+        <button onClick={onChannels} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2.5 text-xs font-black text-white hover:bg-black transition" title="Canais e Portais">
+          <ExternalLink className="h-3.5 w-3.5" />Portais
+        </button>
+        <button onClick={onDelete} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-black text-red-600 hover:bg-red-600 hover:text-white transition" title="Excluir veículo do estoque">
+          <Trash2 className="h-3.5 w-3.5" />Excluir
+        </button>
+      </div>
     </div>
   </article>;
 }
@@ -265,7 +329,7 @@ const POPULAR_OPCIONAIS = [
   'Controle de Estabilidade', 'Piloto Automático', 'Faróis de LED', 'Teto Solar'
 ];
 
-function VehicleEditor({ vehicle, saving, onClose, onSave }) {
+function VehicleEditor({ vehicle, saving, onClose, onSave, onDelete }) {
   const [form, setForm] = useState(() => ({
     ...(vehicle || {}),
     marca: vehicle?.marca || '',
@@ -641,22 +705,34 @@ function VehicleEditor({ vehicle, saving, onClose, onSave }) {
           </label>
 
           {/* BOTÕES DE FINALIZAÇÃO */}
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-200 px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving || uploading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] hover:bg-[#bd0710] px-8 py-3 text-sm font-black text-white shadow-lg shadow-red-200 disabled:opacity-60 transition-all"
-            >
-              {(saving || uploading) && <Loader2 className="h-4 w-4 animate-spin" />}
-              {vehicle ? 'Salvar Alterações' : 'Concluir Cadastro'}
-            </button>
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            {vehicle?.id ? (
+              <button
+                type="button"
+                onClick={() => onDelete?.(vehicle)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-600 hover:bg-red-600 hover:text-white transition"
+              >
+                <Trash2 className="h-4 w-4" />
+                Excluir veículo
+              </button>
+            ) : <div />}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-slate-200 px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving || uploading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] hover:bg-[#bd0710] px-8 py-3 text-sm font-black text-white shadow-lg shadow-red-200 disabled:opacity-60 transition-all"
+              >
+                {(saving || uploading) && <Loader2 className="h-4 w-4 animate-spin" />}
+                {vehicle ? 'Salvar Alterações' : 'Concluir Cadastro'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

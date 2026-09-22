@@ -132,11 +132,21 @@ if ($resource === 'vehicles') {
     // DELETE /api/vehicles/{id}
     if (!empty($subResource) && $method === 'DELETE') {
         $id = $subResource;
+
+        // Deleta do MySQL se conectado
+        $db = getDbConnection();
+        if ($db) {
+            try {
+                $stmt = $db->prepare("DELETE FROM veiculos WHERE id = ?");
+                $stmt->execute([$id]);
+            } catch (Exception $e) {}
+        }
+
         $filtered = array_filter($vehicles, function($v) use ($id) {
-            return $v['id'] !== $id;
+            return (string)$v['id'] !== (string)$id;
         });
 
-        if (count($filtered) !== count($vehicles)) {
+        if (count($filtered) !== count($vehicles) || $db) {
             saveVehicles(array_values($filtered));
             sendJson(['success' => true, 'message' => 'Veículo removido com sucesso.']);
         } else {
