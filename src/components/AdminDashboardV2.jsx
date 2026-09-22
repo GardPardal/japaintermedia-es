@@ -3,7 +3,7 @@ import {
   AlertTriangle, BarChart3, Bell, Car, CheckCircle2, ChevronRight, CircleDollarSign,
   ExternalLink, FileWarning, Filter, Gauge, LayoutDashboard, Link2, Loader2, LogOut,
   Menu, MessageCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Settings,
-  ShieldCheck, Store, Users, X
+  ShieldCheck, Store, Users, X, UploadCloud, Trash2, Star, Image as ImageIcon, Link as LinkIcon
 } from 'lucide-react';
 
 const CHANNELS = [
@@ -249,20 +249,419 @@ function LeadView({ leads }) {
   return <div className="grid gap-3">{leads.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">Nenhum lead recebido até agora.</div> : leads.map(lead => <article key={lead.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 font-black text-[#e50914]">{String(lead.nome || 'L').slice(0,1)}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-black">{lead.nome}</h3><span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">{lead.status || 'Novo'}</span></div><p className="truncate text-sm text-slate-500">{lead.veiculoNome || lead.mensagem || 'Contato geral'}</p></div>{lead.telefone && <a href={`https://wa.me/55${String(lead.telefone).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white"><MessageCircle className="h-4 w-4" />WhatsApp</a>}</article>)}</div>;
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+const POPULAR_OPCIONAIS = [
+  'Ar-condicionado', 'Direção Elétrica', 'Airbags Frontais', 'Freios ABS',
+  'Câmera de Ré', 'Sensor de Estacionamento', 'Central Multimídia',
+  'Bancos de Couro', 'Rodas de Liga Leve', 'Vidros Elétricos', 'Alarme',
+  'Controle de Estabilidade', 'Piloto Automático', 'Faróis de LED', 'Teto Solar'
+];
+
 function VehicleEditor({ vehicle, saving, onClose, onSave }) {
   const [form, setForm] = useState(() => ({
-    ...(vehicle || {}), marca: vehicle?.marca || '', modelo: vehicle?.modelo || '', versao: vehicle?.versao || '',
-    anoFabricacao: vehicle?.anoFabricacao || new Date().getFullYear(), anoModelo: vehicle?.anoModelo || new Date().getFullYear(),
-    km: vehicle?.km || 0, preco: vehicle?.preco || 0, cambio: vehicle?.cambio || 'Automático', combustivel: vehicle?.combustivel || 'Flex',
-    status: vehicle?.status || 'Disponível', fotos: vehicle?.fotos || ['/veiculo-sedan.webp'], descricao: vehicle?.descricao || '',
-    webmotorsSync: Boolean(vehicle?.webmotorsSync)
+    ...(vehicle || {}),
+    marca: vehicle?.marca || '',
+    modelo: vehicle?.modelo || '',
+    versao: vehicle?.versao || '',
+    anoFabricacao: vehicle?.anoFabricacao || new Date().getFullYear(),
+    anoModelo: vehicle?.anoModelo || new Date().getFullYear(),
+    km: vehicle?.km || 0,
+    preco: vehicle?.preco || 0,
+    cambio: vehicle?.cambio || 'Automático',
+    combustivel: vehicle?.combustivel || 'Flex',
+    cor: vehicle?.cor || 'Branco',
+    carroceria: vehicle?.carroceria || 'SUV',
+    portas: vehicle?.portas || 4,
+    finalPlaca: vehicle?.finalPlaca || '1',
+    status: vehicle?.status || 'Disponível',
+    laudoCautelar: vehicle?.laudoCautelar || 'Aprovado 100%',
+    fotos: Array.isArray(vehicle?.fotos) ? [...vehicle.fotos] : [],
+    opcionais: Array.isArray(vehicle?.opcionais) ? [...vehicle.opcionais] : [],
+    descricao: vehicle?.descricao || '',
+    webmotorsSync: Boolean(vehicle?.webmotorsSync ?? true)
   }));
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [customLink, setCustomLink] = useState('');
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const fileInputRef = React.useRef(null);
+
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
-  return <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4" onClick={onClose}><div onClick={e => e.stopPropagation()} className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7"><div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-black uppercase tracking-widest text-[#e50914]">Estoque</p><h2 className="mt-1 text-2xl font-black">{vehicle ? 'Editar veículo' : 'Cadastrar veículo'}</h2></div><button onClick={onClose} className="rounded-xl border border-slate-200 p-2"><X className="h-4 w-4" /></button></div><form onSubmit={e => { e.preventDefault(); onSave(form); }} className="grid gap-4 sm:grid-cols-2">
-    <Field label="Marca" value={form.marca} onChange={v => set('marca', v)} required /><Field label="Modelo" value={form.modelo} onChange={v => set('modelo', v)} required /><div className="sm:col-span-2"><Field label="Versão completa" value={form.versao} onChange={v => set('versao', v)} required /></div><Field label="Ano fabricação" type="number" value={form.anoFabricacao} onChange={v => set('anoFabricacao', Number(v))} /><Field label="Ano modelo" type="number" value={form.anoModelo} onChange={v => set('anoModelo', Number(v))} /><Field label="Quilometragem" type="number" value={form.km} onChange={v => set('km', Number(v))} /><Field label="Preço" type="number" value={form.preco} onChange={v => set('preco', Number(v))} />
-    <Select label="Câmbio" value={form.cambio} onChange={v => set('cambio', v)} options={['Automático','Manual','CVT','Automatizado']} /><Select label="Combustível" value={form.combustivel} onChange={v => set('combustivel', v)} options={['Flex','Gasolina','Diesel','Híbrido','Elétrico']} /><Select label="Status" value={form.status} onChange={v => set('status', v)} options={['Disponível','Reservado','Vendido']} /><Field label="URL da foto principal" value={form.fotos?.[0] || ''} onChange={v => set('fotos', [v, ...(form.fotos || []).slice(1)])} />
-    <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-bold text-slate-600">Descrição</span><textarea rows={4} value={form.descricao} onChange={e => set('descricao', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#e50914]" /></label><div className="sm:col-span-2 flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-black">Cancelar</button><button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] px-6 py-3 text-sm font-black text-white disabled:opacity-60">{saving && <Loader2 className="h-4 w-4 animate-spin" />}{vehicle ? 'Salvar alterações' : 'Cadastrar veículo'}</button></div>
-  </form></div></div>;
+
+  const handleFiles = async (files) => {
+    if (!files || files.length === 0) return;
+    setUploadError('');
+    setUploading(true);
+
+    try {
+      const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (validFiles.length === 0) {
+        setUploadError('Por favor, selecione apenas arquivos de imagem (JPG, PNG, WEBP).');
+        setUploading(false);
+        return;
+      }
+
+      // 1. Tentar upload direto via FormData (multipart)
+      const formData = new FormData();
+      validFiles.forEach(f => formData.append('images[]', f));
+
+      let uploadedUrls = [];
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          uploadedUrls = data.urls || (data.url ? [data.url] : []);
+        }
+      } catch (e) {
+        // multipart falhou, tentar fallback individual
+      }
+
+      // 2. Se multipart não retornou URLs, usar fallback Base64
+      if (uploadedUrls.length === 0) {
+        for (const file of validFiles) {
+          try {
+            const base64 = await readFileAsBase64(file);
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: base64 })
+            });
+            const data = await res.json();
+            if (data.success && data.url) {
+              uploadedUrls.push(data.url);
+            }
+          } catch (err) {
+            console.error('Falha no upload Base64:', err);
+          }
+        }
+      }
+
+      if (uploadedUrls.length > 0) {
+        setForm(prev => ({
+          ...prev,
+          fotos: [...(prev.fotos || []), ...uploadedUrls]
+        }));
+      } else {
+        setUploadError('Não foi possível enviar as imagens. Tente novamente.');
+      }
+    } catch (err) {
+      setUploadError('Ocorreu um erro no upload. Verifique a conexão com o servidor.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const removePhoto = (index) => {
+    setForm(prev => ({
+      ...prev,
+      fotos: prev.fotos.filter((_, i) => i !== index)
+    }));
+  };
+
+  const setPrimaryPhoto = (index) => {
+    setForm(prev => {
+      const fotos = [...prev.fotos];
+      const [chosen] = fotos.splice(index, 1);
+      return { ...prev, fotos: [chosen, ...fotos] };
+    });
+  };
+
+  const addLinkPhoto = () => {
+    if (!customLink.trim()) return;
+    setForm(prev => ({ ...prev, fotos: [...(prev.fotos || []), customLink.trim()] }));
+    setCustomLink('');
+  };
+
+  const toggleOpcional = (item) => {
+    setForm(prev => {
+      const exists = prev.opcionais.includes(item);
+      return {
+        ...prev,
+        opcionais: exists ? prev.opcionais.filter(x => x !== item) : [...prev.opcionais, item]
+      };
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-0 backdrop-blur-xs sm:items-center sm:p-4" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="max-h-[94vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-8">
+        
+        {/* Cabeçalho do Modal */}
+        <div className="mb-6 flex items-start justify-between border-b border-slate-100 pb-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-[#e50914]">Gestão de Estoque</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-900">{vehicle ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Preencha os dados e adicione as fotos arrastando do seu computador.</p>
+          </div>
+          <button onClick={onClose} className="rounded-xl border border-slate-200 p-2 hover:bg-slate-100 transition-colors">
+            <X className="h-5 w-5 text-slate-600" />
+          </button>
+        </div>
+
+        <form onSubmit={e => { e.preventDefault(); onSave(form); }} className="space-y-6">
+          
+          {/* SEÇÃO 1: FOTOS DO VEÍCULO (DRAG & DROP) */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-[#e50914]" />
+                  Fotos do Veículo ({form.fotos?.length || 0})
+                </h3>
+                <p className="text-xs text-slate-500">Arraste fotos aqui ou clique para selecionar. A primeira foto será a capa do anúncio.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLinkInput(!showLinkInput)}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors"
+              >
+                <LinkIcon className="h-3 w-3" />
+                {showLinkInput ? 'Ocultar link' : 'Adicionar por link'}
+              </button>
+            </div>
+
+            {/* Input por link opcional */}
+            {showLinkInput && (
+              <div className="mb-4 flex gap-2">
+                <input
+                  type="url"
+                  placeholder="Cole aqui o link direto da imagem (https://...)"
+                  value={customLink}
+                  onChange={e => setCustomLink(e.target.value)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-[#e50914]"
+                />
+                <button
+                  type="button"
+                  onClick={addLinkPhoto}
+                  className="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 text-xs font-bold transition-colors"
+                >
+                  Inserir Link
+                </button>
+              </div>
+            )}
+
+            {/* Caixa de Arrastar e Soltar (Dropzone) */}
+            <div
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                dragActive
+                  ? 'border-[#e50914] bg-red-50/50 scale-[1.01]'
+                  : 'border-slate-300 bg-white hover:border-[#e50914] hover:bg-slate-50/50'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                onChange={e => handleFiles(e.target.files)}
+                className="hidden"
+              />
+
+              {uploading ? (
+                <div className="flex flex-col items-center justify-center py-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-[#e50914] mb-2" />
+                  <p className="text-sm font-bold text-slate-800">Enviando fotos para o servidor...</p>
+                  <p className="text-xs text-slate-500 mt-1">Isso levará apenas alguns segundos.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-2">
+                  <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-[#e50914]">
+                    <UploadCloud className="h-7 w-7" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800">
+                    <span className="text-[#e50914]">Clique para selecionar fotos</span> ou arraste e solte aqui
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Formatos aceitos: JPG, PNG, WEBP (Selecione várias fotos de uma vez)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {uploadError && (
+              <p className="mt-2 text-xs font-bold text-red-600">{uploadError}</p>
+            )}
+
+            {/* Galeria de Fotos Carregadas */}
+            {form.fotos && form.fotos.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Fotos adicionadas (clique na estrela para definir como capa):
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                  {form.fotos.map((foto, index) => {
+                    const isCover = index === 0;
+                    return (
+                      <div
+                        key={index}
+                        className={`group relative aspect-[4/3] rounded-xl overflow-hidden border-2 bg-slate-100 shadow-sm ${
+                          isCover ? 'border-[#e50914] ring-2 ring-red-100' : 'border-slate-200'
+                        }`}
+                      >
+                        <img
+                          src={foto}
+                          alt={`Foto ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        
+                        {/* Badge de Capa */}
+                        {isCover && (
+                          <span className="absolute top-1.5 left-1.5 bg-[#e50914] text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">
+                            ★ Capa
+                          </span>
+                        )}
+
+                        {/* Botões de Ação na Imagem */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
+                          {!isCover && (
+                            <button
+                              type="button"
+                              onClick={() => setPrimaryPhoto(index)}
+                              title="Tornar Foto Principal"
+                              className="rounded-lg bg-white p-1.5 text-slate-800 hover:text-[#e50914] shadow"
+                            >
+                              <Star className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(index)}
+                            title="Excluir Foto"
+                            className="rounded-lg bg-red-600 p-1.5 text-white hover:bg-red-700 shadow"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* SEÇÃO 2: DADOS DO VEÍCULO */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Marca" value={form.marca} onChange={v => set('marca', v)} placeholder="Ex: Toyota, Honda, Jeep" required />
+            <Field label="Modelo" value={form.modelo} onChange={v => set('modelo', v)} placeholder="Ex: Corolla, Civic, Compass" required />
+            <Field label="Versão Completa" value={form.versao} onChange={v => set('versao', v)} placeholder="Ex: 2.0 XEi 16V Flex Automático" required />
+
+            <Field label="Ano Fabricação" type="number" value={form.anoFabricacao} onChange={v => set('anoFabricacao', Number(v))} />
+            <Field label="Ano Modelo" type="number" value={form.anoModelo} onChange={v => set('anoModelo', Number(v))} />
+            <Field label="Quilometragem (km)" type="number" value={form.km} onChange={v => set('km', Number(v))} />
+
+            <Field label="Preço à Vista (R$)" type="number" value={form.preco} onChange={v => set('preco', Number(v))} required />
+            <Select label="Câmbio" value={form.cambio} onChange={v => set('cambio', v)} options={['Automático', 'Manual', 'CVT', 'Automatizado']} />
+            <Select label="Combustível" value={form.combustivel} onChange={v => set('combustivel', v)} options={['Flex', 'Gasolina', 'Diesel', 'Híbrido', 'Elétrico']} />
+
+            <Select label="Status no Estoque" value={form.status} onChange={v => set('status', v)} options={['Disponível', 'Reservado', 'Vendido']} />
+            <Select label="Carroceria" value={form.carroceria} onChange={v => set('carroceria', v)} options={['SUV', 'Sedan', 'Hatch', 'Picape', 'Cupê', 'Minivan', 'Utilitário']} />
+            <Field label="Cor do Veículo" value={form.cor} onChange={v => set('cor', v)} placeholder="Ex: Branco Pérola, Preto" />
+
+            <Field label="Número de Portas" type="number" value={form.portas} onChange={v => set('portas', Number(v))} />
+            <Field label="Final da Placa" value={form.finalPlaca} onChange={v => set('finalPlaca', v)} placeholder="Ex: 8" />
+            <Field label="Laudo Cautelar" value={form.laudoCautelar} onChange={v => set('laudoCautelar', v)} placeholder="Ex: Aprovado 100%" />
+          </div>
+
+          {/* SEÇÃO 3: OPCIONAIS (CHIPS) */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <span className="mb-2 block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Opcionais e Itens de Série:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {POPULAR_OPCIONAIS.map(op => {
+                const active = form.opcionais.includes(op);
+                return (
+                  <button
+                    key={op}
+                    type="button"
+                    onClick={() => toggleOpcional(op)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+                      active
+                        ? 'bg-[#e50914] text-white shadow-sm'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {active ? `✓ ${op}` : `+ ${op}`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SEÇÃO 4: OBSERVAÇÕES / DESCRIÇÃO */}
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Descrição do Anúncio (Histórico, Estado e Diferenciais)
+            </span>
+            <textarea
+              rows={4}
+              value={form.descricao}
+              onChange={e => set('descricao', e.target.value)}
+              placeholder="Descreva detalhes como laudo cautelar aprovado, revisões em concessionária, único dono, manual e chave reserva..."
+              className="w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-[#e50914]"
+            />
+          </label>
+
+          {/* BOTÕES DE FINALIZAÇÃO */}
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-200 px-6 py-3 text-sm font-black text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] hover:bg-[#bd0710] px-8 py-3 text-sm font-black text-white shadow-lg shadow-red-200 disabled:opacity-60 transition-all"
+            >
+              {(saving || uploading) && <Loader2 className="h-4 w-4 animate-spin" />}
+              {vehicle ? 'Salvar Alterações' : 'Concluir Cadastro'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function Field({ label, value, onChange, type = 'text', required }) { return <label><span className="mb-1.5 block text-xs font-bold text-slate-600">{label}</span><input required={required} type={type} value={value} onChange={e => onChange(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-[#e50914]" /></label>; }
