@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 define('DATA_DIR', __DIR__ . '/../data');
 define('VEHICLES_FILE', DATA_DIR . '/vehicles.json');
 define('LEADS_FILE', DATA_DIR . '/leads.json');
+define('SALES_FILE', DATA_DIR . '/sales.json');
+define('SETTINGS_FILE', DATA_DIR . '/settings.json');
 
 // Garante que o diretório data exista
 if (!is_dir(DATA_DIR)) {
@@ -294,6 +296,160 @@ function saveLeads($leads) {
     }
     $json = json_encode($leads, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     return file_put_contents(LEADS_FILE, $json, LOCK_EX) !== false;
+}
+
+/**
+ * Lê o histórico de vendas (com fallback para JSON)
+ */
+function getSales() {
+    $db = getDbConnection();
+    if ($db) {
+        try {
+            $stmt = $db->query("SELECT * FROM vendas ORDER BY data_venda DESC, id DESC");
+            $rows = $stmt->fetchAll();
+            if (!empty($rows)) {
+                $sales = [];
+                foreach ($rows as $r) {
+                    $sales[] = [
+                        'id' => (string)$r['id'],
+                        'veiculoId' => $r['veiculo_id'] ?? null,
+                        'veiculoNome' => $r['veiculo_nome'] ?? '',
+                        'veiculoFoto' => $r['veiculo_foto'] ?? '',
+                        'clienteNome' => $r['cliente_nome'] ?? '',
+                        'clienteCpf' => $r['cliente_cpf'] ?? '',
+                        'clienteTelefone' => $r['cliente_telefone'] ?? '',
+                        'valorVenda' => (float)($r['valor_venda'] ?? 0),
+                        'formaPagamento' => $r['forma_pagamento'] ?? 'Financiamento',
+                        'vendedor' => $r['vendedor'] ?? 'Loja Matriz',
+                        'dataVenda' => $r['data_venda'] ?? date('c'),
+                        'lucroEstimado' => isset($r['lucro_estimado']) ? (float)$r['lucro_estimado'] : 0,
+                        'observacoes' => $r['observacoes'] ?? ''
+                    ];
+                }
+                return $sales;
+            }
+        } catch (Exception $e) {}
+    }
+
+    if (!file_exists(SALES_FILE)) {
+        return [];
+    }
+    $content = file_get_contents(SALES_FILE);
+    $data = json_decode($content, true);
+    return is_array($data) ? $data : [];
+}
+
+/**
+ * Salva as vendas na base de dados MySQL e JSON
+ */
+function saveSales($sales) {
+    $db = getDbConnection();
+    if ($db && count($sales) > 0) {
+        try {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS vendas (
+                    id VARCHAR(64) PRIMARY KEY,
+                    veiculo_id VARCHAR(64) NULL,
+                    veiculo_nome VARCHAR(255) NOT NULL,
+                    veiculo_foto VARCHAR(500) NULL,
+                    cliente_nome VARCHAR(255) NOT NULL,
+                    cliente_cpf VARCHAR(20) NULL,
+                    cliente_telefone VARCHAR(30) NULL,
+                    valor_venda DECIMAL(12,2) NOT NULL,
+                    forma_pagamento VARCHAR(100) NOT NULL,
+                    vendedor VARCHAR(100) NULL,
+                    data_venda DATETIME NOT NULL,
+                    lucro_estimado DECIMAL(12,2) NULL,
+                    observacoes TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+            
+            $latest = $sales[0];
+            $stmt = $db->prepare("
+                INSERT INTO vendas (
+                    id, veiculo_id, veiculo_nome, veiculo_foto, cliente_nome, cliente_cpf,
+                    cliente_telefone, valor_venda, forma_pagamento, vendedor, data_venda,
+                    lucro_estimado, observacoes
+                ) VALUES (
+                    :id, :veiculo_id, :veiculo_nome, :veiculo_foto, :cliente_nome, :cliente_cpf,
+                    :cliente_telefone, :valor_venda, :forma_pagamento, :vendedor, :data_venda,
+                    :lucro_estimado, :observacoes
+                ) ON DUPLICATE KEY UPDATE
+                    valor_venda = VALUES(valor_venda),
+                    forma_pagamento = VALUES(forma_pagamento),
+                    observacoes = VALUES(observacoes)
+            ");
+            $stmt->execute([
+                ':id' => (string)($latest['id'] ?? uniqid('venda-')),
+                ':veiculo_id' => $latest['veiculoId'] ?? null,
+                ':veiculo_nome' => $latest['veiculoNome'] ?? '',
+                ':veiculo_foto' => $latest['veiculoFoto'] ?? null,
+                ':cliente_nome' => $latest['clienteNome'] ?? '',
+                ':cliente_cpf' => $latest['clienteCpf'] ?? null,
+                ':cliente_telefone' => $latest['clienteTelefone'] ?? null,
+                ':valor_venda' => (float)($latest['valorVenda'] ?? 0),
+                ':forma_pagamento' => $latest['formaPagamento'] ?? 'Financiamento',
+                ':vendedor' => $latest['vendedor'] ?? 'Loja Matriz',
+                ':data_venda' => !empty($latest['dataVenda']) ? date('Y-m-d H:i:s', strtotime($latest['dataVenda'])) : date('Y-m-d H:i:s'),
+                ':lucro_estimado' => (float)($latest['lucroEstimado'] ?? 0),
+                ':observacoes' => $latest['observacoes'] ?? null
+            ]);
+        } catch (Exception $e) {}
+    }
+
+    if (!is_dir(DATA_DIR)) {
+        @mkdir(DATA_DIR, 0755, true);
+    }
+    $json = json_encode($sales, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return file_put_contents(SALES_FILE, $json, LOCK_EX) !== false;
+}
+
+/**
+ * Lê as configurações da loja
+ */
+function getSettings() {
+    $defaultSettings = [
+        'nomeLoja' => 'JAPA Intermediações',
+        'razaoSocial' => 'Japa Intermediações de Veículos Ltda',
+        'cnpj' => '48.650.390/0001-71',
+        'telefone' => '(43) 99643-7966',
+        'whatsapp' => '43996437966',
+        'email' => 'contato@japaintermediacoes.com.br',
+        'endereco' => 'Avenida Avelino Vieira, 68',
+        'bairro' => 'Centro',
+        'cidade' => 'Wenceslau Braz',
+        'uf' => 'PR',
+        'cep' => '84950-000',
+        'horarioSemana' => '08:00 às 18:00',
+        'horarioSabado' => '08:00 às 12:30',
+        'instagram' => 'https://instagram.com/japaintermediacoes',
+        'facebook' => 'https://facebook.com/japaintermediacoes',
+        'taxaFinanciamento' => '1.39',
+        'notificacoesWhatsapp' => true,
+        'notificacoesEmail' => true,
+        'ocultarVendidos' => false,
+        'garantiaPadrao' => '3 meses (motor e câmbio)',
+        'mensagemPadraoWhatsapp' => 'Olá! Gostaria de mais informações sobre o veículo que vi no site JAPA Intermediações.'
+    ];
+
+    if (!file_exists(SETTINGS_FILE)) {
+        return $defaultSettings;
+    }
+    $content = file_get_contents(SETTINGS_FILE);
+    $data = json_decode($content, true);
+    return is_array($data) ? array_merge($defaultSettings, $data) : $defaultSettings;
+}
+
+/**
+ * Salva as configurações da loja
+ */
+function saveSettings($settings) {
+    if (!is_dir(DATA_DIR)) {
+        @mkdir(DATA_DIR, 0755, true);
+    }
+    $json = json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return file_put_contents(SETTINGS_FILE, $json, LOCK_EX) !== false;
 }
 
 /**

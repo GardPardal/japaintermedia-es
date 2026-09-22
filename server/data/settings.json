@@ -1,0 +1,23 @@
+{
+  "nomeLoja": "JAPA Intermediações",
+  "razaoSocial": "Japa Intermediações de Veículos Ltda",
+  "cnpj": "48.650.390/0001-71",
+  "telefone": "(43) 99643-7966",
+  "whatsapp": "43996437966",
+  "email": "contato@japaintermediacoes.com.br",
+  "endereco": "Avenida Avelino Vieira, 68",
+  "bairro": "Centro",
+  "cidade": "Wenceslau Braz",
+  "uf": "PR",
+  "cep": "84950-000",
+  "horarioSemana": "08:00 às 18:00",
+  "horarioSabado": "08:00 às 12:30",
+  "instagram": "https://instagram.com/japaintermediacoes",
+  "facebook": "https://facebook.com/japaintermediacoes",
+  "taxaFinanciamento": "1.39",
+  "notificacoesWhatsapp": true,
+  "notificacoesEmail": true,
+  "ocultarVendidos": false,
+  "garantiaPadrao": "3 meses (motor e câmbio)",
+  "mensagemPadraoWhatsapp": "Olá! Gostaria de mais informações sobre o veículo que vi no site JAPA Intermediações."
+}

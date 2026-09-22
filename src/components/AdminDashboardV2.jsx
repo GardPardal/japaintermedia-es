@@ -5,6 +5,9 @@ import {
   Menu, MessageCircle, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Settings,
   ShieldCheck, Store, Users, X, UploadCloud, Trash2, Star, Image as ImageIcon, Link as LinkIcon
 } from 'lucide-react';
+import SalesView from './admin/SalesView';
+import ReportsView from './admin/ReportsView';
+import SettingsView from './admin/SettingsView';
 
 const CHANNELS = [
   { key: 'site', label: 'Site', color: 'bg-slate-950' },
@@ -46,6 +49,9 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
   const [mobileMenu, setMobileMenu] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [reports, setReports] = useState(null);
+  const [settings, setSettings] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -58,15 +64,27 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
   async function loadData() {
     setLoading(true);
     try {
-      const [vehicleRes, leadRes, statsRes] = await Promise.all([
-        fetch('/api/vehicles'), fetch('/api/leads'), fetch('/api/stats')
+      const [vehicleRes, leadRes, statsRes, salesRes, reportsRes, settingsRes] = await Promise.all([
+        fetch('/api/vehicles'),
+        fetch('/api/leads'),
+        fetch('/api/stats'),
+        fetch('/api/sales').catch(() => null),
+        fetch('/api/reports').catch(() => null),
+        fetch('/api/settings').catch(() => null)
       ]);
       const vehicleData = vehicleRes.ok ? await vehicleRes.json() : { vehicles: [] };
       const leadData = leadRes.ok ? await leadRes.json() : { leads: [] };
       const statsData = statsRes.ok ? await statsRes.json() : null;
+      const salesData = salesRes && salesRes.ok ? await salesRes.json() : { sales: [] };
+      const reportsData = reportsRes && reportsRes.ok ? await reportsRes.json() : null;
+      const settingsData = settingsRes && settingsRes.ok ? await settingsRes.json() : null;
+
       setVehicles(vehicleData.vehicles || []);
       setLeads(leadData.leads || []);
       setStats(statsData);
+      setSales(salesData.sales || []);
+      setReports(reportsData);
+      setSettings(settingsData);
     } catch (error) {
       setNotice('Não foi possível atualizar os dados agora. Verifique a API da hospedagem.');
     } finally {
@@ -88,10 +106,6 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
   const needsAttention = vehicles.filter(v => v.isDemoPrice).length;
 
   function selectTab(key) {
-    if (['sales', 'reports', 'settings'].includes(key)) {
-      setNotice('Este módulo está preparado no layout e será ativado quando os respectivos dados forem conectados.');
-      return;
-    }
     setTab(key);
     setMobileMenu(false);
   }
@@ -143,6 +157,49 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
     }
   }
 
+  async function saveSale(saleData) {
+    const res = await fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saleData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Falha ao registrar venda.');
+    }
+    await loadData();
+    onVehicleUpdated?.();
+    setNotice(`Venda de "${saleData.veiculoNome}" registrada com sucesso!`);
+  }
+
+  async function deleteSale(sale) {
+    if (!sale || !sale.id) return;
+    const confirmed = window.confirm(`Deseja cancelar o registro de venda de "${sale.veiculoNome}" para ${sale.clienteNome}? Se o veículo pertencia ao estoque, seu status voltará a ser 'Disponível'.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/sales/${sale.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Falha ao cancelar venda.');
+      await loadData();
+      onVehicleUpdated?.();
+      setNotice('Venda cancelada com sucesso.');
+    } catch (e) {
+      setNotice('Erro ao cancelar venda.');
+    }
+  }
+
+  async function saveSettings(settingsData) {
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settingsData)
+    });
+    if (!res.ok) throw new Error('Falha ao salvar configurações.');
+    const data = await res.json();
+    setSettings(data.settings);
+    setNotice('Configurações da loja atualizadas com sucesso.');
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex overflow-hidden bg-[#f5f6f8] text-[#111]">
       <aside className={`absolute inset-y-0 left-0 z-50 w-64 bg-[#111315] text-white transition-transform lg:relative lg:translate-x-0 ${mobileMenu ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -188,8 +245,29 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
             {notice && <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><span>{notice}</span><button onClick={() => setNotice('')}><X className="h-4 w-4" /></button></div>}
 
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div><p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-[#e50914]">JAPA Gestão</p><h1 className="text-2xl font-black tracking-tight sm:text-3xl">{tab === 'stock' ? 'Estoque de veículos' : tab === 'leads' ? 'Leads e propostas' : tab === 'portals' ? 'Canais de publicação' : 'Visão geral'}</h1><p className="mt-1 text-sm text-slate-500">{vehicles.length} veículos • {published} disponíveis no site</p></div>
-              {tab === 'stock' && <button onClick={() => setEditorVehicle(null)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-200 hover:bg-[#bd0710]"><Plus className="h-4 w-4" />Cadastrar veículo</button>}
+              <div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-[#e50914]">JAPA Gestão</p>
+                <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+                  {tab === 'stock' ? 'Estoque de veículos' :
+                   tab === 'leads' ? 'Leads e propostas' :
+                   tab === 'sales' ? 'Gestão de vendas' :
+                   tab === 'reports' ? 'Relatórios e métricas' :
+                   tab === 'settings' ? 'Configurações da loja' :
+                   tab === 'portals' ? 'Canais de publicação' : 'Visão geral'}
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  {tab === 'sales' ? `${sales.length} vendas registradas • Faturamento consolidado` :
+                   tab === 'reports' ? 'Indicadores de faturamento, margem e giro de estoque' :
+                   tab === 'settings' ? 'Parâmetros institucionais, segurança e integrações' :
+                   tab === 'leads' ? `${leads.length} propostas recebidas` :
+                   `${vehicles.length} veículos • ${published} disponíveis no site`}
+                </p>
+              </div>
+              {tab === 'stock' && (
+                <button onClick={() => setEditorVehicle(null)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e50914] px-5 py-3 text-sm font-black text-white shadow-lg shadow-red-200 hover:bg-[#bd0710]">
+                  <Plus className="h-4 w-4" />Cadastrar veículo
+                </button>
+              )}
             </div>
 
             <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -202,8 +280,11 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
 
             {loading ? <div className="flex min-h-[320px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#e50914]" /></div> : null}
             {!loading && tab === 'stock' && <StockView vehicles={filtered} query={query} setQuery={setQuery} status={status} setStatus={setStatus} onRefresh={loadData} onEdit={setEditorVehicle} onChannels={setSelectedVehicle} onDelete={deleteVehicle} />}
-            {!loading && tab === 'overview' && <Overview stats={stats} vehicles={vehicles} leads={leads} onOpenStock={() => setTab('stock')} />}
+            {!loading && tab === 'overview' && <Overview stats={stats} vehicles={vehicles} leads={leads} sales={sales} onOpenStock={() => setTab('stock')} onOpenSales={() => setTab('sales')} />}
             {!loading && tab === 'leads' && <LeadView leads={leads} />}
+            {!loading && tab === 'sales' && <SalesView sales={sales} vehicles={vehicles} onRefresh={loadData} onSaveSale={saveSale} onDeleteSale={deleteSale} />}
+            {!loading && tab === 'reports' && <ReportsView reports={reports} sales={sales} vehicles={vehicles} leads={leads} />}
+            {!loading && tab === 'settings' && <SettingsView settings={settings} onSaveSettings={saveSettings} vehicles={vehicles} leads={leads} sales={sales} />}
             {!loading && tab === 'portals' && <PortalView />}
           </div>
         </main>
@@ -304,9 +385,53 @@ function PortalView() {
   return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{CHANNELS.map(channel => <div key={channel.key} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-3"><span className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black text-white ${channel.color}`}>{channel.label.slice(0,2).toUpperCase()}</span><div><h3 className="font-black">{channel.label}</h3><p className="flex items-center gap-1 text-xs text-slate-500"><StatusDot tone={channel.key === 'site' ? 'success' : 'muted'} />{channel.key === 'site' ? 'Ativo' : 'Aguardando credenciais'}</p></div></div><button disabled={channel.key !== 'site'} className="mt-5 w-full rounded-xl border border-slate-200 py-2.5 text-xs font-black disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400">{channel.key === 'site' ? 'Conexão ativa' : 'Configurar integração'}</button></div>)}</div>;
 }
 
-function Overview({ stats, vehicles, leads, onOpenStock }) {
+function Overview({ stats, vehicles, leads, sales = [], onOpenStock, onOpenSales }) {
   const total = stats?.valorTotalEstoque || vehicles.reduce((sum, item) => sum + Number(item.preco || 0), 0);
-  return <div className="grid gap-5 lg:grid-cols-3"><div className="rounded-2xl bg-[#111315] p-6 text-white shadow-xl lg:col-span-2"><p className="text-xs font-bold uppercase tracking-widest text-red-400">Valor do estoque</p><p className="mt-2 text-4xl font-black">{money(total)}</p><p className="mt-2 text-sm text-slate-400">Visão consolidada dos veículos cadastrados.</p><button onClick={onOpenStock} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#e50914] px-4 py-3 text-sm font-black">Gerenciar estoque<ChevronRight className="h-4 w-4" /></button></div><div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><Users className="h-6 w-6 text-[#e50914]" /><p className="mt-5 text-3xl font-black">{leads.length}</p><p className="text-sm text-slate-500">Leads recebidos</p></div></div>;
+  const totalVendido = sales.reduce((sum, s) => sum + (Number(s.valorVenda) || 0), 0);
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-3">
+      <div className="rounded-2xl bg-[#111315] p-6 text-white shadow-xl lg:col-span-2">
+        <p className="text-xs font-bold uppercase tracking-widest text-red-400">Valor do estoque</p>
+        <p className="mt-2 text-4xl font-black">{money(total)}</p>
+        <p className="mt-2 text-sm text-slate-400">Visão consolidada dos veículos cadastrados e disponíveis na loja.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={onOpenStock}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#e50914] px-4 py-3 text-sm font-black text-white hover:bg-[#bd0710] transition shadow-lg shadow-red-950/30"
+          >
+            Gerenciar estoque<ChevronRight className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onOpenSales}
+            className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-black text-white hover:bg-white/20 transition"
+          >
+            Ver Vendas Realizadas<ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <CircleDollarSign className="h-6 w-6 text-emerald-600" />
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700">Faturamento</span>
+          </div>
+          <p className="mt-3 text-2xl font-black text-slate-900">{money(totalVendido)}</p>
+          <p className="text-xs text-slate-500">{sales.length} veículos vendidos</p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <Users className="h-6 w-6 text-[#e50914]" />
+            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-black text-[#e50914]">Interesse</span>
+          </div>
+          <p className="mt-3 text-2xl font-black text-slate-900">{leads.length}</p>
+          <p className="text-xs text-slate-500">Leads e propostas recebidos</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function LeadView({ leads }) {

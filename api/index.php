@@ -359,9 +359,270 @@ if ($resource === 'stats' && $method === 'GET') {
 }
 
 // ==========================================
+// 3.1. ROTAS DE VENDAS (/api/sales)
+// ==========================================
+if ($resource === 'sales') {
+    $sales = getSales();
+    $vehicles = getVehicles();
+
+    // GET /api/sales
+    if (empty($subResource) && $method === 'GET') {
+        $totalFaturado = array_sum(array_column($sales, 'valorVenda'));
+        $totalLucro = array_sum(array_column($sales, 'lucroEstimado'));
+        $ticketMedio = count($sales) > 0 ? round($totalFaturado / count($sales)) : 0;
+
+        sendJson([
+            'total' => count($sales),
+            'sales' => $sales,
+            'totalFaturado' => $totalFaturado,
+            'totalLucro' => $totalLucro,
+            'ticketMedio' => $ticketMedio
+        ]);
+    }
+
+    // POST /api/sales (Registrar nova venda)
+    if (empty($subResource) && $method === 'POST') {
+        $body = getRequestBody();
+        if (empty($body['clienteNome']) || empty($body['valorVenda'])) {
+            sendJson(['error' => 'Nome do cliente e valor da venda são obrigatórios.'], 400);
+        }
+
+        $veiculoId = $body['veiculoId'] ?? null;
+        $veiculoNome = $body['veiculoNome'] ?? '';
+        $veiculoFoto = $body['veiculoFoto'] ?? '';
+
+        // Se tem veículo do estoque, atualiza status para 'Vendido'
+        if (!empty($veiculoId)) {
+            $updatedVehicles = false;
+            foreach ($vehicles as $k => $v) {
+                if ((string)$v['id'] === (string)$veiculoId) {
+                    $vehicles[$k]['status'] = 'Vendido';
+                    if (empty($veiculoNome)) {
+                        $veiculoNome = $v['marca'] . ' ' . $v['modelo'] . ' ' . ($v['versao'] ?? '');
+                    }
+                    if (empty($veiculoFoto)) {
+                        $veiculoFoto = $v['fotos'][0] ?? '/veiculo-sedan.webp';
+                    }
+                    $updatedVehicles = true;
+                    break;
+                }
+            }
+            if ($updatedVehicles) {
+                saveVehicles($vehicles);
+            }
+        }
+
+        $newSale = [
+            'id' => 'venda-' . time(),
+            'veiculoId' => $veiculoId,
+            'veiculoNome' => $veiculoNome ?: 'Veículo Avulso',
+            'veiculoFoto' => $veiculoFoto ?: '/veiculo-sedan.webp',
+            'clienteNome' => trim($body['clienteNome']),
+            'clienteCpf' => $body['clienteCpf'] ?? '',
+            'clienteTelefone' => $body['clienteTelefone'] ?? '',
+            'valorVenda' => (float)$body['valorVenda'],
+            'formaPagamento' => $body['formaPagamento'] ?? 'Financiamento',
+            'vendedor' => $body['vendedor'] ?? 'Equipe JAPA',
+            'dataVenda' => !empty($body['dataVenda']) ? $body['dataVenda'] : date('c'),
+            'lucroEstimado' => isset($body['lucroEstimado']) ? (float)$body['lucroEstimado'] : 0,
+            'observacoes' => $body['observacoes'] ?? ''
+        ];
+
+        array_unshift($sales, $newSale);
+        saveSales($sales);
+
+        sendJson([
+            'success' => true,
+            'message' => 'Venda registrada com sucesso.',
+            'sale' => $newSale
+        ], 201);
+    }
+
+    // DELETE /api/sales/{id}
+    if (!empty($subResource) && $method === 'DELETE') {
+        $id = $subResource;
+        $deletedSale = null;
+        $filtered = [];
+
+        foreach ($sales as $s) {
+            if ((string)$s['id'] === (string)$id) {
+                $deletedSale = $s;
+            } else {
+                $filtered[] = $s;
+            }
+        }
+
+        if ($deletedSale) {
+            // Se tinha veículo vinculado, pode restaurar status para 'Disponível'
+            if (!empty($deletedSale['veiculoId'])) {
+                foreach ($vehicles as $k => $v) {
+                    if ((string)$v['id'] === (string)$deletedSale['veiculoId'] && $v['status'] === 'Vendido') {
+                        $vehicles[$k]['status'] = 'Disponível';
+                        saveVehicles($vehicles);
+                        break;
+                    }
+                }
+            }
+
+            saveSales(array_values($filtered));
+            sendJson(['success' => true, 'message' => 'Venda cancelada e veículo restaurado para disponível.']);
+        } else {
+            sendJson(['error' => 'Registro de venda não encontrado.'], 404);
+        }
+    }
+}
+
+// ==========================================
+// 3.2. ROTAS DE RELATÓRIOS (/api/reports)
+// ==========================================
+if ($resource === 'reports' && $method === 'GET') {
+    $vehicles = getVehicles();
+    $sales = getSales();
+    $leads = getLeads();
+
+    // 1. Resumo Geral
+    $totalFaturado = array_sum(array_column($sales, 'valorVenda'));
+    $totalLucro = array_sum(array_column($sales, 'lucroEstimado'));
+    $ticketMedio = count($sales) > 0 ? round($totalFaturado / count($sales)) : 0;
+
+    $disponiveis = count(array_filter($vehicles, fn($v) => ($v['status'] ?? '') === 'Disponível'));
+    $valorEstoque = 0;
+    foreach ($vehicles as $v) {
+        if (($v['status'] ?? '') === 'Disponível') {
+            $valorEstoque += (float)($v['preco'] ?? 0);
+        }
+    }
+
+    // 2. Vendas por Mês (últimos 6 meses)
+    $vendasPorMes = [];
+    $mesesNomes = ['01'=>'Jan', '02'=>'Fev', '03'=>'Mar', '04'=>'Abr', '05'=>'Mai', '06'=>'Jun', '07'=>'Jul', '08'=>'Ago', '09'=>'Set', '10'=>'Out', '11'=>'Nov', '12'=>'Dez'];
+    for ($i = 5; $i >= 0; $i--) {
+        $timestamp = strtotime("-{$i} month");
+        $chaveAnoMes = date('Y-m', $timestamp);
+        $nomeMes = $mesesNomes[date('m', $timestamp)] . '/' . date('y', $timestamp);
+        $vendasPorMes[$chaveAnoMes] = [
+            'mes' => $nomeMes,
+            'total' => 0,
+            'quantidade' => 0,
+            'lucro' => 0
+        ];
+    }
+    foreach ($sales as $s) {
+        $anoMes = substr($s['dataVenda'], 0, 7);
+        if (isset($vendasPorMes[$anoMes])) {
+            $vendasPorMes[$anoMes]['total'] += (float)$s['valorVenda'];
+            $vendasPorMes[$anoMes]['quantidade'] += 1;
+            $vendasPorMes[$anoMes]['lucro'] += (float)($s['lucroEstimado'] ?? 0);
+        }
+    }
+
+    // 3. Distribuição por Carroceria no Estoque
+    $porCarroceria = [];
+    foreach ($vehicles as $v) {
+        $c = !empty($v['carroceria']) ? $v['carroceria'] : 'Outros';
+        $porCarroceria[$c] = ($porCarroceria[$c] ?? 0) + 1;
+    }
+
+    // 4. Ranking de Marcas
+    $porMarca = [];
+    foreach ($vehicles as $v) {
+        $m = !empty($v['marca']) ? $v['marca'] : 'Outras';
+        $porMarca[$m] = ($porMarca[$m] ?? 0) + 1;
+    }
+    arsort($porMarca);
+
+    // 5. Funil de Conversão
+    $totalLeads = count($leads);
+    $leadsNovos = count(array_filter($leads, fn($l) => ($l['status'] ?? '') === 'Novo'));
+    $taxaConversao = $totalLeads > 0 ? round((count($sales) / $totalLeads) * 100, 1) : 0;
+
+    // 6. Formas de Pagamento
+    $porPagamento = [];
+    foreach ($sales as $s) {
+        $p = $s['formaPagamento'] ?? 'Outros';
+        $porPagamento[$p] = ($porPagamento[$p] ?? 0) + 1;
+    }
+
+    sendJson([
+        'metricas' => [
+            'totalFaturado' => $totalFaturado,
+            'totalLucro' => $totalLucro,
+            'ticketMedio' => $ticketMedio,
+            'veiculosVendidos' => count($sales),
+            'veiculosEmEstoque' => $disponiveis,
+            'valorEstoque' => $valorEstoque,
+            'totalLeads' => $totalLeads,
+            'taxaConversao' => $taxaConversao
+        ],
+        'vendasPorMes' => array_values($vendasPorMes),
+        'porCarroceria' => $porCarroceria,
+        'porMarca' => array_slice($porMarca, 0, 6, true),
+        'porPagamento' => $porPagamento,
+        'ultimasVendas' => array_slice($sales, 0, 5)
+    ]);
+}
+
+// ==========================================
+// 3.3. ROTAS DE CONFIGURAÇÕES (/api/settings)
+// ==========================================
+if ($resource === 'settings') {
+    if ($method === 'GET') {
+        sendJson(getSettings());
+    }
+
+    if ($method === 'PUT' || $method === 'POST') {
+        $body = getRequestBody();
+        $current = getSettings();
+        $updated = array_merge($current, $body);
+        saveSettings($updated);
+
+        sendJson([
+            'success' => true,
+            'message' => 'Configurações da loja salvas com sucesso.',
+            'settings' => $updated
+        ]);
+    }
+}
+
+// ==========================================
 // 4. AUTENTICAÇÃO (/api/auth/login)
 // ==========================================
 if ($resource === 'auth') {
+    // 4.1 Alteração de Senha (/api/auth/change-password)
+    if ($subResource === 'change-password' && $method === 'POST') {
+        $body = getRequestBody();
+        $newPassword = trim($body['newPassword'] ?? '');
+
+        if (strlen($newPassword) < 4) {
+            sendJson(['error' => 'A nova senha deve ter pelo menos 4 caracteres.'], 400);
+        }
+
+        $db = getDbConnection();
+        if ($db) {
+            try {
+                $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+                $stmt = $db->prepare("UPDATE usuarios SET password_hash = ? WHERE role = 'admin' OR username = 'admin'");
+                $stmt->execute([$hash]);
+            } catch (Exception $e) {}
+        }
+
+        $envPath = __DIR__ . '/../.env';
+        if (file_exists($envPath)) {
+            $envContent = file_get_contents($envPath);
+            if (strpos($envContent, 'ADMIN_PASSWORD=') !== false) {
+                $envContent = preg_replace('/ADMIN_PASSWORD=.*/', "ADMIN_PASSWORD={$newPassword}", $envContent);
+            } else {
+                $envContent .= "\nADMIN_PASSWORD={$newPassword}\n";
+            }
+            @file_put_contents($envPath, $envContent);
+        }
+
+        sendJson([
+            'success' => true,
+            'message' => 'Senha de acesso administrativo atualizada com sucesso.'
+        ]);
+    }
+
     if ($subResource === 'login' && $method === 'POST') {
         $body = getRequestBody();
         $username = trim(mb_strtolower($body['username'] ?? ''));
