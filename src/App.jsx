@@ -10,7 +10,7 @@ import Footer from './components/Footer.jsx';
 import BottomMobileBar from './components/BottomMobileBar.jsx';
 import FloatingWhatsApp from './components/FloatingWhatsApp.jsx';
 import VehicleDetailModal from './components/VehicleDetailModal.jsx';
-import AdminDashboard from './components/AdminDashboard.jsx';
+import AdminDashboard from './components/AdminDashboardV2.jsx';
 import AdminLoginModal from './components/AdminLoginModal.jsx';
 import { ArrowRight } from 'lucide-react';
 
