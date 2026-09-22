@@ -64,9 +64,9 @@ Essa página irá checar automaticamente:
 - **Pela URL:** `https://seusite.com.br/admin`
 - **Pelo botão no site:** Clique em **"Painel de Gestão"** no cabeçalho ou no rodapé.
 
-### Credenciais de Acesso:
-- **Usuário:** `admin` (ou `brenza`)
-- **Senha:** `brenza2026`
+### Credenciais de Acesso
+
+Configure os usuários no banco de dados e mantenha senhas e tokens somente nas variáveis seguras da hospedagem. Nunca publique credenciais no GitHub.
 
 ---
 
