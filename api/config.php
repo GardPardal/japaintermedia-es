@@ -24,15 +24,34 @@ if (!is_dir(DATA_DIR)) {
     @mkdir(DATA_DIR, 0755, true);
 }
 
-// Configurações do Banco de Dados MySQL (Hostoo)
+// Carrega variáveis do arquivo .env se existir na raiz
+if (file_exists(__DIR__ . '/../.env')) {
+    $envLines = @file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($envLines) {
+        foreach ($envLines as $envLine) {
+            $envLine = trim($envLine);
+            if ($envLine === '' || str_starts_with($envLine, '#')) continue;
+            if (strpos($envLine, '=') !== false) {
+                list($envKey, $envVal) = explode('=', $envLine, 2);
+                $envKey = trim($envKey);
+                $envVal = trim($envVal, " \t\n\r\0\x0B\"'");
+                putenv("{$envKey}={$envVal}");
+                $_ENV[$envKey] = $envVal;
+                $_SERVER[$envKey] = $envVal;
+            }
+        }
+    }
+}
+
+// Configurações do Banco de Dados MySQL
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_PORT', getenv('DB_PORT') ?: 3306);
 define('DB_NAME', getenv('DB_NAME') ?: 'japa');
-define('DB_USER', getenv('DB_USER') ?: 'alison');
-define('DB_PASS', getenv('DB_PASS') ?: 'qfzY43Wq');
+define('DB_USER', getenv('DB_USER') ?: '');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 
 /**
- * Retorna conexão PDO com o MySQL (com fallback para 200.9.22.2 se localhost falhar)
+ * Retorna conexão PDO com o MySQL
  */
 function getDbConnection() {
     static $pdo = null;
@@ -40,7 +59,11 @@ function getDbConnection() {
         return $pdo;
     }
 
-    $hosts = [DB_HOST, '127.0.0.1', '200.9.22.2'];
+    if (!DB_USER) {
+        return null;
+    }
+
+    $hosts = [DB_HOST, '127.0.0.1'];
     foreach (array_unique($hosts) as $h) {
         try {
             $dsn = "mysql:host={$h};port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
@@ -52,7 +75,7 @@ function getDbConnection() {
             $pdo = $conn;
             return $pdo;
         } catch (Exception $e) {
-            // Tenta próximo host se localhost falhar
+            // Tenta próximo host se falhar
         }
     }
     return null;

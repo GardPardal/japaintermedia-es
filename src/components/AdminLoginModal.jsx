@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Lock, User, Key, X, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginModal({ onClose, onLoginSuccess }) {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('brenza2026');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,14 +30,7 @@ export default function AdminLoginModal({ onClose, onLoginSuccess }) {
         setError(data.error || 'Usuário ou senha incorretos.');
       }
     } catch (err) {
-      // Fallback local se estiver offline
-      if ((username === 'admin' || username === 'japa' || username === 'brenza') && (password === 'brenza2026' || password === 'japa2026' || password === 'admin')) {
-        localStorage.setItem('brenza_auth_token', 'local-token');
-        localStorage.setItem('brenza_user', JSON.stringify({ name: 'Administrador Japa Intermediações', role: 'Admin' }));
-        onLoginSuccess();
-      } else {
-        setError('Erro ao conectar ao servidor de autenticação.');
-      }
+      setError('Erro ao conectar ao servidor de autenticação. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -122,15 +115,6 @@ export default function AdminLoginModal({ onClose, onLoginSuccess }) {
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </div>
-          </div>
-
-          {/* Quick Credential Hint */}
-          <div className="bg-[#18202A] p-3 rounded-xl border border-white/5 text-[11px] text-slate-400 space-y-1">
-            <span className="font-semibold text-slate-300 block">Credenciais Padrão:</span>
-            <div className="flex justify-between font-mono text-slate-300">
-              <span>Usuário: <strong className="text-white">admin</strong></span>
-              <span>Senha: <strong className="text-white">brenza2026</strong></span>
             </div>
           </div>
 

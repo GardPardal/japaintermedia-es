@@ -5,8 +5,27 @@
  */
 header('Content-Type: application/json; charset=utf-8');
 
-// Configuração de segurança
-define('BRIDGE_SECRET', 'xf4Hx3Vj09');
+// Carrega variáveis do .env se presente
+if (file_exists(__DIR__ . '/../.env')) {
+    $envLines = @file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($envLines) {
+        foreach ($envLines as $envLine) {
+            $envLine = trim($envLine);
+            if ($envLine === '' || str_starts_with($envLine, '#')) continue;
+            if (strpos($envLine, '=') !== false) {
+                list($k, $v) = explode('=', $envLine, 2);
+                $k = trim($k);
+                $v = trim($v, " \t\n\r\0\x0B\"'");
+                putenv("{$k}={$v}");
+                $_ENV[$k] = $v;
+                $_SERVER[$k] = $v;
+            }
+        }
+    }
+}
+
+// Configuração de segurança via variável de ambiente
+$configuredSecret = getenv('BRIDGE_SECRET') ?: getenv('MCP_REMOTE_SECRET') ?: '';
 define('BASE_DIR', realpath(__DIR__ . '/..'));
 
 // Validação de autenticação
@@ -20,9 +39,9 @@ if (!$token && isset($_REQUEST['token'])) {
     $token = trim($_REQUEST['token']);
 }
 
-if ($token !== BRIDGE_SECRET) {
+if (empty($configuredSecret) || $token !== $configuredSecret) {
     http_response_code(403);
-    echo json_encode(['error' => 'Acesso negado. Token de autorização inválido.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => 'Acesso negado. Token de autorização inválido ou não configurado.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

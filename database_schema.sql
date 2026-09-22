@@ -1,7 +1,5 @@
 -- Estrutura do Banco de Dados MySQL - Japa Intermediações
--- Host: 200.9.22.2 (Hostoo)
 -- Base de Dados: japa
--- Usuário: alison
 
 SET NAMES utf8mb4;
 SET time_zone = '-03:00';

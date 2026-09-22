@@ -363,7 +363,7 @@ if ($resource === 'auth') {
                 $stmt = $db->prepare("SELECT * FROM usuarios WHERE (username = :u OR email = :u) AND ativo = 1 LIMIT 1");
                 $stmt->execute([':u' => $username]);
                 $userRow = $stmt->fetch();
-                if ($userRow && (password_verify($password, $userRow['password_hash']) || in_array($password, ['brenza2026', 'japa2026', 'qfzY43Wq', 'admin'], true))) {
+                if ($userRow && password_verify($password, $userRow['password_hash'])) {
                     @$db->prepare("UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?")->execute([$userRow['id']]);
                     sendJson([
                         'success' => true,
@@ -376,21 +376,21 @@ if ($resource === 'auth') {
                     ]);
                 }
             } catch (Exception $e) {
-                // fallback para verificação estática
+                // fallback para verificação via variável de ambiente
             }
         }
 
-        $validUsers = ['admin', 'japa', 'alison', 'brenza', 'admin@japa.com.br', 'admin@brenza.com.br'];
-        $validPass = ['brenza2026', 'japa2026', 'qfzY43Wq', 'admin', 'brenza', 'japa'];
+        $envUser = getenv('ADMIN_USER') ?: 'admin';
+        $envPass = getenv('ADMIN_PASSWORD');
 
-        if (in_array($username, $validUsers, true) && in_array($password, $validPass, true)) {
+        if (!empty($envPass) && strtolower($username) === strtolower($envUser) && $password === $envPass) {
             sendJson([
                 'success' => true,
-                'token' => 'japa-admin-token-2026',
+                'token' => 'japa-admin-token-' . bin2hex(random_bytes(16)),
                 'user' => [
                     'name' => 'Administrador Japa Intermediações',
                     'role' => 'Diretoria / Gestor de Estoque',
-                    'email' => 'contato@japaintermediacoes.com.br'
+                    'email' => $envUser
                 ]
             ]);
         }
