@@ -67,22 +67,21 @@ app.get('/api/stats', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
 
-  const validUsernames = ['admin', 'brenza', 'admin@brenza.com.br'];
-  const validPasswords = ['brenza2026', 'admin', 'brenza'];
+  const configuredUser = process.env.ADMIN_USER;
+  const configuredPassword = process.env.ADMIN_PASSWORD;
 
   if (
-    username && 
-    validUsernames.includes(username.trim().toLowerCase()) && 
-    password && 
-    validPasswords.includes(password.trim())
+    configuredUser && configuredPassword && username && password &&
+    username.trim().toLowerCase() === configuredUser.trim().toLowerCase() &&
+    password === configuredPassword
   ) {
     return res.json({
       success: true,
-      token: 'brenza-admin-token-2026',
+      token: `japa-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       user: {
-        name: 'Administrador Brenza',
+        name: 'Administrador JAPA',
         role: 'Diretoria / Gestor de Estoque',
-        email: 'contato@brenzamotors.com.br'
+        email: configuredUser
       }
     });
   }
