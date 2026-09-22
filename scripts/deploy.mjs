@@ -22,6 +22,10 @@ const commands = [
   'cp -f /home/hz18jx9b/public_html/japaintermedia-es/index.html /home/hz18jx9b/public_html/index.html',
   'cp -rf /home/hz18jx9b/public_html/japaintermedia-es/assets/* /home/hz18jx9b/public_html/assets/',
   'cp -f /home/hz18jx9b/public_html/japaintermedia-es/api/index.php /home/hz18jx9b/public_html/api/index.php',
+  'cp -f /home/hz18jx9b/public_html/japaintermedia-es/api/config.php /home/hz18jx9b/public_html/api/config.php',
+  'mkdir -p /home/hz18jx9b/public_html/data',
+  'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/sales.json /home/hz18jx9b/public_html/data/sales.json',
+  'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/settings.json /home/hz18jx9b/public_html/data/settings.json',
   'echo "--- 3. Limpando cache do LiteSpeed ---"',
   'rm -rf /home/hz18jx9b/lscache/*',
   'echo "--- 4. Concluído ---"'
