@@ -1,0 +1,44 @@
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
+const rootDir = process.cwd();
+const indexPath = path.join(rootDir, 'index.html');
+const distDir = path.join(rootDir, 'dist');
+const assetsDir = path.join(rootDir, 'assets');
+
+console.log('--- 1. Preparando index.html com entrypoint /src/main.jsx ---');
+let html = fs.readFileSync(indexPath, 'utf8');
+
+// Garante que o index.html tenha o script src="/src/main.jsx" para o Vite compilar
+html = html.replace(/<script type="module" crossorigin src="\/assets\/index-[^"]+\.js"><\/script>\s*<link rel="stylesheet" crossorigin href="\/assets\/index-[^"]+\.css">/g, '');
+if (!html.includes('/src/main.jsx')) {
+  html = html.replace('</body>', '  <script type="module" src="/src/main.jsx"></script>\n  </body>');
+}
+fs.writeFileSync(indexPath, html, 'utf8');
+
+console.log('--- 2. Executando vite build ---');
+execSync('npx vite build', { stdio: 'inherit' });
+
+console.log('--- 3. Atualizando index.html da raiz e pasta assets com o bundle de produção ---');
+const builtIndex = path.join(distDir, 'index.html');
+if (fs.existsSync(builtIndex)) {
+  fs.copyFileSync(builtIndex, indexPath);
+  console.log('✓ index.html atualizado com o bundle compilado.');
+}
+
+const builtAssets = path.join(distDir, 'assets');
+if (fs.existsSync(builtAssets)) {
+  if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+  // Limpa assets antigos
+  for (const f of fs.readdirSync(assetsDir)) {
+    fs.unlinkSync(path.join(assetsDir, f));
+  }
+  // Copia novos assets
+  for (const f of fs.readdirSync(builtAssets)) {
+    fs.copyFileSync(path.join(builtAssets, f), path.join(assetsDir, f));
+    console.log(`✓ assets/${f} copiado.`);
+  }
+}
+
+console.log('--- BUILD CONCLUÍDO COM SUCESSO! ---');
