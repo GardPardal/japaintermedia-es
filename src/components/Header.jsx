@@ -59,7 +59,7 @@ export default function Header({
             className="flex-shrink-0 flex items-center cursor-pointer" 
             onClick={() => handleNavClick('/')}
           >
-            <Logo className="h-10 sm:h-12 w-auto" variant="dark" />
+            <Logo className="h-12 sm:h-14 w-auto" variant="dark" />
           </div>
 
           {/* Desktop Navigation Links */}

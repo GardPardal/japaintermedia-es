@@ -22,6 +22,10 @@ export default function Hero({ onExploreStock, onSellCar }) {
 
         {/* Content Container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full">
+          <div className="absolute right-6 top-8 hidden lg:block text-right text-[#101010]">
+            <div className="font-serif text-2xl tracking-[0.35em]">より遠くへ</div>
+            <div className="mt-1 text-[9px] font-black uppercase tracking-[0.42em]">Sempre com você</div>
+          </div>
           <div className="max-w-lg lg:max-w-xl space-y-5">
             
             {/* Title matching mockup */}

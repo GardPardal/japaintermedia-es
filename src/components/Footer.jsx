@@ -20,7 +20,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
           
           {/* Col 1: Logo & Slogan */}
           <div className="lg:col-span-2 space-y-3">
-            <Logo variant="white" className="h-10 w-auto" />
+            <Logo variant="white" className="h-14 w-fit" />
             <p className="text-slate-400 text-xs font-normal">
               Conectando você ao melhor negócio!
             </p>
