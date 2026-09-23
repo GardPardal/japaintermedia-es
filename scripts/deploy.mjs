@@ -24,6 +24,8 @@ const commands = [
   'cp -f /home/hz18jx9b/public_html/japaintermedia-es/api/index.php /home/hz18jx9b/public_html/api/index.php',
   'cp -f /home/hz18jx9b/public_html/japaintermedia-es/api/config.php /home/hz18jx9b/public_html/api/config.php',
   'cp -f /home/hz18jx9b/public_html/japaintermedia-es/status.php /home/hz18jx9b/public_html/status.php',
+  'cp -f /home/hz18jx9b/public_html/japaintermedia-es/veiculo.php /home/hz18jx9b/public_html/veiculo.php',
+  'cp -f /home/hz18jx9b/public_html/japaintermedia-es/.htaccess /home/hz18jx9b/public_html/.htaccess',
   'mkdir -p /home/hz18jx9b/public_html/data',
   'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/sales.json /home/hz18jx9b/public_html/data/sales.json',
   'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/settings.json /home/hz18jx9b/public_html/data/settings.json',

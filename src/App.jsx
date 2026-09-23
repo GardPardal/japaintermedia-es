@@ -55,6 +55,67 @@ export default function App() {
     }
   }, []);
 
+  const handleOpenVehicle = (v) => {
+    setSelectedVehicle(v);
+    if (v && v.id) {
+      window.history.pushState({ vehicleId: v.id }, '', `/veiculo/${v.id}`);
+      document.title = `${v.marca} ${v.modelo} ${v.versao || ''} (${v.anoModelo || ''}) - JAPA Intermediações`;
+    }
+  };
+
+  const handleCloseVehicle = () => {
+    setSelectedVehicle(null);
+    window.history.pushState(null, '', '/');
+    document.title = 'JAPA Intermediações | Loja de Carros em Wenceslau Braz - PR';
+  };
+
+  // Sincroniza veículo direto da URL (/veiculo/:id ou ?veiculo=:id) e lida com botão Voltar do navegador
+  useEffect(() => {
+    if (!vehicles || vehicles.length === 0) return;
+
+    const path = window.location.pathname;
+    const match = path.match(/^\/veiculo\/([^/]+)/i);
+    const params = new URLSearchParams(window.location.search);
+    const queryId = match ? match[1] : (params.get('veiculo') || params.get('carro'));
+
+    if (queryId) {
+      const numericQuery = queryId.replace(/\D/g, '');
+      const found = vehicles.find(v => 
+        String(v.id).toLowerCase() === queryId.toLowerCase() ||
+        (numericQuery && String(v.id).replace(/\D/g, '') === numericQuery)
+      );
+      if (found) {
+        setSelectedVehicle(found);
+        document.title = `${found.marca} ${found.modelo} ${found.versao || ''} (${found.anoModelo || ''}) - JAPA Intermediações`;
+      }
+    }
+
+    const onPopState = () => {
+      const curPath = window.location.pathname;
+      const curMatch = curPath.match(/^\/veiculo\/([^/]+)/i);
+      const curParams = new URLSearchParams(window.location.search);
+      const curId = curMatch ? curMatch[1] : (curParams.get('veiculo') || curParams.get('carro'));
+
+      if (curId && vehicles.length > 0) {
+        const numQ = curId.replace(/\D/g, '');
+        const f = vehicles.find(v => 
+          String(v.id).toLowerCase() === curId.toLowerCase() ||
+          (numQ && String(v.id).replace(/\D/g, '') === numQ)
+        );
+        if (f) {
+          setSelectedVehicle(f);
+          document.title = `${f.marca} ${f.modelo} ${f.versao || ''} (${f.anoModelo || ''}) - JAPA Intermediações`;
+          return;
+        }
+      }
+      setSelectedVehicle(null);
+      document.title = 'JAPA Intermediações | Loja de Carros em Wenceslau Braz - PR';
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [vehicles]);
+
   const handleOpenAdmin = () => {
     if (localStorage.getItem('brenza_auth_token')) {
       setIsAuthenticated(true);
@@ -220,7 +281,7 @@ export default function App() {
                 <VehicleCard
                   key={vehicle.id}
                   vehicle={vehicle}
-                  onSelectVehicle={(v) => setSelectedVehicle(v)}
+                  onSelectVehicle={handleOpenVehicle}
                 />
               ))}
             </div>
@@ -255,7 +316,7 @@ export default function App() {
         {selectedVehicle && (
           <VehicleDetailModal
             vehicle={selectedVehicle}
-            onClose={() => setSelectedVehicle(null)}
+            onClose={handleCloseVehicle}
           />
         )}
 

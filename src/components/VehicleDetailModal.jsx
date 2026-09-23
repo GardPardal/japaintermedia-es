@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Check, Calendar, Gauge, Fuel, Cog, ShieldCheck, 
-  MessageCircle, Calculator, ArrowRight, Car, CheckCircle2, Info, Share2
+  MessageCircle, Calculator, ArrowRight, Car, CheckCircle2, Info, Share2, Copy
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext.jsx';
 
@@ -41,8 +41,10 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
   const [tradeKm, setTradeKm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Financial calculations
+  // Link direto do veículo para SEO Social (WhatsApp, Facebook, Instagram)
+  const vehicleUrl = `${window.location.origin}/veiculo/${vehicle.id}`;
   const financedAmount = Math.max(0, preco - downPayment);
   const monthlyRate = 0.0159; // 1.59% a.m.
   const monthlyInstallment = financedAmount > 0 
@@ -97,9 +99,39 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
     window.open(getWhatsAppUrl(text), '_blank');
   };
 
-  const shareVehicle = () => {
-    const siteUrl = window.location.origin;
-    const shareText = `🚗 Olha este ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${vehicle.anoModelo}) na ${settings.nomeLoja || 'JAPA Intermediações'} por ${formatBRL(vehicle.preco)} em ${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}!\n\nConfira as fotos e detalhes no site:\n${siteUrl}/`;
+  const copyVehicleLink = async () => {
+    try {
+      await navigator.clipboard.writeText(vehicleUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      const el = document.createElement('textarea');
+      el.value = vehicleUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
+  const shareVehicle = async () => {
+    const shareText = `🚗 Olha este ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${vehicle.anoModelo}) na ${settings.nomeLoja || 'JAPA Intermediações'} por ${formatBRL(vehicle.preco)}!\n\nConfira as fotos e ficha completa:\n${vehicleUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${vehicle.marca} ${vehicle.modelo} (${vehicle.anoModelo}) - ${formatBRL(vehicle.preco)}`,
+          text: shareText,
+          url: vehicleUrl
+        });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -294,14 +326,35 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
                   <span>Negociar pelo WhatsApp</span>
                 </button>
 
-                <button
-                  onClick={shareVehicle}
-                  type="button"
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-2 border border-slate-200"
-                >
-                  <Share2 className="w-4 h-4 text-emerald-600" />
-                  <span>Compartilhar Veículo no WhatsApp</span>
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={shareVehicle}
+                    type="button"
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-2.5 px-3 rounded-xl font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 border border-slate-200"
+                    title="Compartilhar veículo no WhatsApp ou redes sociais"
+                  >
+                    <Share2 className="w-4 h-4 text-emerald-600" />
+                    <span>Compartilhar</span>
+                  </button>
+
+                  <button
+                    onClick={copyVehicleLink}
+                    type="button"
+                    className={`w-full py-2.5 px-3 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1.5 border ${
+                      copied 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
+                    }`}
+                    title="Copiar link exclusivo deste veículo"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-600" />}
+                    <span>{copied ? 'Link Copiado!' : 'Copiar Link'}</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500">
+                  <span className="text-slate-400 font-mono select-all truncate">{vehicleUrl}</span>
+                </div>
               </div>
             </div>
 

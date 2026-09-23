@@ -392,6 +392,79 @@ app.post('/api/auth/login', (req, res) => {
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
+
+  // Rota dinâmica de veículos para SEO Social (WhatsApp, Facebook, Meta, Twitter)
+  app.get('/veiculo/:id', (req, res) => {
+    const { id } = req.params;
+    const targetHtmlPath = path.join(distPath, 'index.html');
+    if (!fs.existsSync(targetHtmlPath)) {
+      return res.status(404).send('index.html não encontrado');
+    }
+
+    let html = fs.readFileSync(targetHtmlPath, 'utf8');
+
+    // Carrega configurações
+    const settingsPath = path.join(__dirname, '../data/settings.json');
+    let settings = {};
+    if (fs.existsSync(settingsPath)) {
+      try { settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (e) {}
+    }
+    const nomeLoja = settings.nomeLoja || 'JAPA Intermediações';
+    const cidade = settings.cidade || 'Wenceslau Braz';
+    const uf = settings.uf || 'PR';
+
+    // Carrega veículos
+    const vehiclesPath = path.join(__dirname, '../data/vehicles.json');
+    if (fs.existsSync(vehiclesPath)) {
+      try {
+        const vehicles = JSON.parse(fs.readFileSync(vehiclesPath, 'utf8'));
+        const numericQuery = (id || '').replace(/\D/g, '');
+        const vehicle = vehicles.find(v =>
+          String(v.id).toLowerCase() === (id || '').toLowerCase() ||
+          (numericQuery && String(v.id).replace(/\D/g, '') === numericQuery)
+        );
+
+        if (vehicle) {
+          const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+          const host = req.headers['host'] || `localhost:${PORT}`;
+          const baseUrl = `${protocol}://${host}`;
+          const vehicleUrl = `${baseUrl}/veiculo/${encodeURIComponent(vehicle.id)}`;
+
+          let primaryPhoto = (vehicle.fotos && vehicle.fotos[0]) || '/hero-japa.jpg';
+          if (!primaryPhoto.startsWith('http://') && !primaryPhoto.startsWith('https://')) {
+            primaryPhoto = `${baseUrl}/${primaryPhoto.replace(/^\//, '')}`;
+          }
+
+          const precoFormatted = Number(vehicle.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+          const ano = vehicle.anoModelo || vehicle.anoFabricacao || '';
+          const title = `${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${ano}) - ${precoFormatted} | ${nomeLoja}`;
+          const desc = `🚗 ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} ${ano} por ${precoFormatted} na ${nomeLoja} em ${cidade} - ${uf}. ${vehicle.cambio || 'Automático'}, laudo aprovado e garantia. Confira fotos e ficha completa!`;
+
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${title}</title>`);
+          html = html.replace(/<meta\s+property=["']og:title["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta property="og:title" content="${title}" />`);
+          html = html.replace(/<meta\s+property=["']og:description["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta property="og:description" content="${desc}" />`);
+          html = html.replace(/<meta\s+property=["']og:url["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta property="og:url" content="${vehicleUrl}" />`);
+          html = html.replace(/<meta\s+name=["']twitter:title["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta name="twitter:title" content="${title}" />`);
+          html = html.replace(/<meta\s+name=["']twitter:description["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta name="twitter:description" content="${desc}" />`);
+          html = html.replace(/<meta\s+name=["']twitter:url["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta name="twitter:url" content="${vehicleUrl}" />`);
+
+          // Limpa og:image anteriores e injeta a foto real do veículo
+          html = html.replace(/<meta\s+property=["']og:image["'][^>]*\/?>\s*/gi, '');
+          html = html.replace(/<meta\s+property=["']og:image:[^"']*["'][^>]*\/?>\s*/gi, '');
+          html = html.replace(/<link\s+rel=["']image_src["'][^>]*\/?>\s*/gi, '');
+
+          const carImgTags = `\n    <meta property="og:image" content="${primaryPhoto}" />\n    <meta property="og:image:secure_url" content="${primaryPhoto}" />\n    <meta property="og:image:alt" content="${title}" />\n    <link rel="image_src" href="${primaryPhoto}" />\n`;
+          html = html.replace(/(<meta\s+property=["']og:description["'][^>]*\/?>)/i, `$1${carImgTags}`);
+          html = html.replace(/<meta\s+name=["']twitter:image["']\s+content=["'][^"']*["']\s*\/?>/i, `<meta name="twitter:image" content="${primaryPhoto}" />`);
+        }
+      } catch (e) {}
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(html);
+  });
+
   app.get('*', (req, res, next) => {
     if (req.url.startsWith('/api')) return next();
     res.sendFile(path.join(distPath, 'index.html'));

@@ -76,6 +76,12 @@ if (fs.existsSync(publicHtmlDir)) {
     fs.copyFileSync(statusPhp, path.join(publicHtmlDir, 'status.php'));
   }
 
+  // Copia veiculo.php atualizado para public_html/veiculo.php
+  const veiculoPhp = path.join(rootDir, 'veiculo.php');
+  if (fs.existsSync(veiculoPhp)) {
+    fs.copyFileSync(veiculoPhp, path.join(publicHtmlDir, 'veiculo.php'));
+  }
+
   // Garante data/settings.json e data/sales.json em public_html/data
   const pubDataDir = path.join(publicHtmlDir, 'data');
   if (!fs.existsSync(pubDataDir)) fs.mkdirSync(pubDataDir, { recursive: true });

@@ -1,5 +1,16 @@
-# Configuração Apache / LiteSpeed para Hostinger, HostGator e cPanel
-# Brenza Multimarcas - Sistema Automotivo PHP
+# BEGIN cPanel-generated php ini directives
+<IfModule php8_module>
+   php_value error_log "/home/hz18jx9b/logs/php.error.log"
+   php_flag log_errors On
+</IfModule>
+<IfModule lsapi_module>
+   php_value error_log "/home/hz18jx9b/logs/php.error.log"
+   php_flag log_errors On
+</IfModule>
+# END cPanel-generated php ini directives
+
+# Configuração Apache / LiteSpeed para Hostoo, Hostinger e cPanel
+# Japa Intermediações - Sistema Automotivo PHP
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -14,7 +25,14 @@
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # 3. Qualquer outra rota (ex: /admin, /veiculo/...) vai para o index.html da aplicação
+    # 3. Rota dinâmica de veículos para SEO Social (Meta / WhatsApp / Facebook / Twitter)
+    RewriteRule ^veiculo/([^/]+)/?$ veiculo.php?id=$1 [QSA,L]
+
+    # 4. Suporte a parâmetro de busca ?veiculo=...
+    RewriteCond %{QUERY_STRING} (?:^|&)veiculo=([^&]+) [NC]
+    RewriteRule ^$ veiculo.php?id=%1 [L]
+
+    # 5. Qualquer outra rota (ex: /admin, /estoque...) vai para o index.html da aplicação
     RewriteRule ^ index.html [L]
 </IfModule>
 
