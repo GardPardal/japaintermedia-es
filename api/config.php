@@ -20,6 +20,7 @@ define('VEHICLES_FILE', DATA_DIR . '/vehicles.json');
 define('LEADS_FILE', DATA_DIR . '/leads.json');
 define('SALES_FILE', DATA_DIR . '/sales.json');
 define('SETTINGS_FILE', DATA_DIR . '/settings.json');
+define('USERS_FILE', DATA_DIR . '/users.json');
 
 // Garante que o diretório data exista
 if (!is_dir(DATA_DIR)) {
@@ -458,6 +459,64 @@ function saveSettings($settings) {
     $publicDataDir = __DIR__ . '/../public_html/data';
     if (is_dir($publicDataDir) && realpath($publicDataDir) !== realpath(DATA_DIR)) {
         @file_put_contents($publicDataDir . '/settings.json', $json, LOCK_EX);
+    }
+
+    return $saved;
+}
+
+/**
+ * Retorna os usuários administrativos cadastrados
+ */
+function getUsers() {
+    $defaultUsers = [
+        [
+            'id' => 1,
+            'username' => 'marcio',
+            'nome' => 'Marcio - Administrador',
+            'email' => 'marcio@japaintermediacoes.com.br',
+            'role' => 'Diretoria / Gestor de Estoque',
+            'password_hash' => '$2y$10$Clsher/WV38EAd/6J.vq6u90qVD60MVu3te81wBJ/JTYwqVQu6ZY2',
+            'password_plain' => 'marcio2026',
+            'ativo' => 1,
+            'criado_em' => '2026-09-23 14:30:00'
+        ]
+    ];
+
+    if (!file_exists(USERS_FILE)) {
+        saveUsers($defaultUsers);
+        return $defaultUsers;
+    }
+
+    $raw = @file_get_contents(USERS_FILE);
+    $data = json_decode($raw, true);
+    if (!is_array($data) || empty($data)) {
+        saveUsers($defaultUsers);
+        return $defaultUsers;
+    }
+
+    return $data;
+}
+
+/**
+ * Salva a lista de usuários no arquivo JSON e sincroniza pastas
+ */
+function saveUsers($users) {
+    if (!is_dir(DATA_DIR)) {
+        @mkdir(DATA_DIR, 0755, true);
+    }
+    $json = json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $saved = file_put_contents(USERS_FILE, $json, LOCK_EX) !== false;
+
+    // Sincroniza com server/data/users.json se existir
+    $serverDataDir = __DIR__ . '/../server/data';
+    if (is_dir($serverDataDir)) {
+        @file_put_contents($serverDataDir . '/users.json', $json, LOCK_EX);
+    }
+
+    // Sincroniza com public_html/data/users.json se existir
+    $publicDataDir = __DIR__ . '/../public_html/data';
+    if (is_dir($publicDataDir) && realpath($publicDataDir) !== realpath(DATA_DIR)) {
+        @file_put_contents($publicDataDir . '/users.json', $json, LOCK_EX);
     }
 
     return $saved;

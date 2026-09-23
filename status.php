@@ -11,17 +11,27 @@ $dataDir = __DIR__ . '/data';
 $vehiclesFile = $dataDir . '/vehicles.json';
 $leadsFile = $dataDir . '/leads.json';
 $settingsFile = $dataDir . '/settings.json';
+$usersFile = $dataDir . '/users.json';
 
 $isDataDirWritable = is_writable($dataDir);
 $isVehiclesWritable = file_exists($vehiclesFile) ? is_writable($vehiclesFile) : is_writable($dataDir);
 $isLeadsWritable = file_exists($leadsFile) ? is_writable($leadsFile) : is_writable($dataDir);
 $isSettingsWritable = file_exists($settingsFile) ? is_writable($settingsFile) : is_writable($dataDir);
+$isUsersWritable = file_exists($usersFile) ? is_writable($usersFile) : is_writable($dataDir);
 
 $currentWhatsapp = '';
 if (file_exists($settingsFile)) {
     $sData = json_decode(file_get_contents($settingsFile), true);
     if (!empty($sData['whatsapp'])) {
         $currentWhatsapp = $sData['whatsapp'];
+    }
+}
+
+$adminUserFound = 'marcio';
+if (file_exists($usersFile)) {
+    $uData = json_decode(file_get_contents($usersFile), true);
+    if (is_array($uData) && !empty($uData)) {
+        $adminUserFound = $uData[0]['username'] ?? 'marcio';
     }
 }
 
@@ -87,6 +97,13 @@ if (file_exists($vehiclesFile)) {
             <span>Configurações da Loja & WhatsApp (settings.json)</span>
             <span class="badge <?= $isSettingsWritable ? 'badge-success' : 'badge-error' ?>">
                 <?= $isSettingsWritable ? "OK (WhatsApp ativo: {$currentWhatsapp})" : 'Sem permissão' ?>
+            </span>
+        </div>
+
+        <div class="item">
+            <span>Usuário Administrador (users.json)</span>
+            <span class="badge <?= $isUsersWritable ? 'badge-success' : 'badge-error' ?>">
+                <?= $isUsersWritable ? "OK (Usuário '{$adminUserFound}' ativo)" : 'Sem permissão' ?>
             </span>
         </div>
 

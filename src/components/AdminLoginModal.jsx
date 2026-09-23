@@ -88,7 +88,7 @@ export default function AdminLoginModal({ onClose, onLoginSuccess }) {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                placeholder="marcio"
                 className="w-full bg-[#1A222C] border border-white/10 text-white text-sm rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:border-brenza-red"
               />
             </div>

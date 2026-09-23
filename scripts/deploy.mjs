@@ -27,6 +27,9 @@ const commands = [
   'mkdir -p /home/hz18jx9b/public_html/data',
   'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/sales.json /home/hz18jx9b/public_html/data/sales.json',
   'cp -u /home/hz18jx9b/public_html/japaintermedia-es/data/settings.json /home/hz18jx9b/public_html/data/settings.json',
+  'cp -f /home/hz18jx9b/public_html/japaintermedia-es/data/users.json /home/hz18jx9b/public_html/data/users.json',
+  'echo "ADMIN_USER=marcio" > /home/hz18jx9b/public_html/.env',
+  'echo "ADMIN_PASSWORD=marcio2026" >> /home/hz18jx9b/public_html/.env',
   'echo "--- 3. Limpando cache do LiteSpeed ---"',
   'rm -rf /home/hz18jx9b/lscache/*',
   'echo "--- 4. Concluído ---"'

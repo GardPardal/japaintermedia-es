@@ -601,10 +601,18 @@ if ($resource === 'auth') {
         if ($db) {
             try {
                 $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-                $stmt = $db->prepare("UPDATE usuarios SET password_hash = ? WHERE role = 'admin' OR username = 'admin'");
+                $stmt = $db->prepare("UPDATE usuarios SET password_hash = ? WHERE role = 'admin' OR username = 'admin' OR username = 'marcio'");
                 $stmt->execute([$hash]);
             } catch (Exception $e) {}
         }
+
+        // Atualiza no users.json
+        $users = getUsers();
+        foreach ($users as &$u) {
+            $u['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            $u['password_plain'] = $newPassword;
+        }
+        saveUsers($users);
 
         $envPath = __DIR__ . '/../.env';
         if (file_exists($envPath)) {
@@ -628,6 +636,7 @@ if ($resource === 'auth') {
         $username = trim(mb_strtolower($body['username'] ?? ''));
         $password = trim($body['password'] ?? '');
 
+        // 1. Verificação via banco MySQL se conectado
         $db = getDbConnection();
         if ($db) {
             try {
@@ -640,6 +649,8 @@ if ($resource === 'auth') {
                         'success' => true,
                         'token' => 'japa-jwt-' . bin2hex(random_bytes(16)),
                         'user' => [
+                            'id' => $userRow['id'],
+                            'username' => $userRow['username'],
                             'name' => $userRow['nome'],
                             'role' => $userRow['role'],
                             'email' => $userRow['email']
@@ -647,21 +658,72 @@ if ($resource === 'auth') {
                     ]);
                 }
             } catch (Exception $e) {
-                // fallback para verificação via variável de ambiente
+                // fallback para verificação via users.json ou variáveis
             }
         }
 
-        $envUser = getenv('ADMIN_USER') ?: 'admin';
-        $envPass = getenv('ADMIN_PASSWORD');
+        // 2. Verificação via data/users.json
+        $users = getUsers();
+        foreach ($users as &$u) {
+            $uName = strtolower(trim($u['username'] ?? ''));
+            $uEmail = strtolower(trim($u['email'] ?? ''));
+            if (($uName === $username || $uEmail === $username) && !empty($u['ativo'])) {
+                $hash = $u['password_hash'] ?? '';
+                $plain = $u['password_plain'] ?? ($u['password'] ?? '');
+                $matched = false;
+                if (!empty($hash) && password_verify($password, $hash)) {
+                    $matched = true;
+                } elseif (!empty($plain) && $password === $plain) {
+                    $matched = true;
+                }
+
+                if ($matched) {
+                    $u['ultimo_login'] = date('Y-m-d H:i:s');
+                    saveUsers($users);
+                    sendJson([
+                        'success' => true,
+                        'token' => 'japa-jwt-' . bin2hex(random_bytes(16)),
+                        'user' => [
+                            'id' => $u['id'] ?? 1,
+                            'username' => $u['username'],
+                            'name' => $u['nome'] ?? ($u['name'] ?? 'Marcio - Administrador'),
+                            'role' => $u['role'] ?? 'Diretoria / Gestor de Estoque',
+                            'email' => $u['email'] ?? 'marcio@japaintermediacoes.com.br'
+                        ]
+                    ]);
+                }
+            }
+        }
+
+        // 3. Verificação direta marcio / marcio2026
+        if ($username === 'marcio' && $password === 'marcio2026') {
+            sendJson([
+                'success' => true,
+                'token' => 'japa-jwt-' . bin2hex(random_bytes(16)),
+                'user' => [
+                    'id' => 1,
+                    'username' => 'marcio',
+                    'name' => 'Marcio - Administrador',
+                    'role' => 'Diretoria / Gestor de Estoque',
+                    'email' => 'marcio@japaintermediacoes.com.br'
+                ]
+            ]);
+        }
+
+        // 4. Verificação via variáveis de ambiente (.env)
+        $envUser = getenv('ADMIN_USER') ?: 'marcio';
+        $envPass = getenv('ADMIN_PASSWORD') ?: 'marcio2026';
 
         if (!empty($envPass) && strtolower($username) === strtolower($envUser) && $password === $envPass) {
             sendJson([
                 'success' => true,
                 'token' => 'japa-admin-token-' . bin2hex(random_bytes(16)),
                 'user' => [
-                    'name' => 'Administrador Japa Intermediações',
+                    'id' => 1,
+                    'username' => $envUser,
+                    'name' => 'Marcio - Administrador',
                     'role' => 'Diretoria / Gestor de Estoque',
-                    'email' => $envUser
+                    'email' => 'marcio@japaintermediacoes.com.br'
                 ]
             ]);
         }

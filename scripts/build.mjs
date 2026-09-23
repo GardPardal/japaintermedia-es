@@ -89,6 +89,11 @@ if (fs.existsSync(publicHtmlDir)) {
   if (fs.existsSync(srcSales) && !fs.existsSync(pubSales)) {
     fs.copyFileSync(srcSales, pubSales);
   }
+  const srcUsers = path.join(rootDir, 'data/users.json');
+  const pubUsers = path.join(pubDataDir, 'users.json');
+  if (fs.existsSync(srcUsers)) {
+    fs.copyFileSync(srcUsers, pubUsers);
+  }
 
   console.log('✓ public_html atualizado com assets, index.html, api e data.');
 }

@@ -219,8 +219,26 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
             ))}
           </nav>
           <div className="bg-seigaiha border-t border-white/10 p-5">
-            <p className="text-xs leading-relaxed text-slate-400">Conectando boas histórias sobre rodas.</p>
-            <button onClick={onLogout} className="mt-4 flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white"><LogOut className="h-4 w-4" />Sair da conta</button>
+            {(() => {
+              let user = { name: 'Marcio', role: 'Administrador' };
+              try {
+                const stored = JSON.parse(localStorage.getItem('brenza_user') || '{}');
+                if (stored && stored.name) user = stored;
+              } catch (e) {}
+              return (
+                <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/5 p-2.5 border border-white/5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e50914] text-xs font-black text-white shadow-md shadow-red-950/40">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-white">{user.name}</p>
+                    <p className="truncate text-[10px] text-slate-400">{user.role || 'Administrador'}</p>
+                  </div>
+                </div>
+              );
+            })()}
+            <p className="text-[11px] leading-relaxed text-slate-400">Conectando boas histórias sobre rodas.</p>
+            <button onClick={onLogout} className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-colors"><LogOut className="h-4 w-4" />Sair da conta</button>
           </div>
         </div>
       </aside>
