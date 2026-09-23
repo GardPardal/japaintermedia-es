@@ -117,23 +117,29 @@ if (preg_match('/<link\s+rel=["\']canonical["\']/i', $html)) {
 }
 
 // 5. Substitui TODAS as referências de imagem genéricas anteriores pelas fotos REAIS do veículo
-// Remove o bloco antigo de og:image e link image_src
-$carImageTags = "\n    <!-- FOTO REAL DO VEÍCULO PARA META (WHATSAPP, FACEBOOK, INSTAGRAM) -->\n"
-              . '    <meta property="og:image" content="' . htmlspecialchars($primaryPhoto, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
-              . '    <meta property="og:image:secure_url" content="' . htmlspecialchars($primaryPhoto, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
-              . '    <meta property="og:image:alt" content="' . htmlspecialchars("{$marca} {$modelo} {$ano}", ENT_QUOTES, 'UTF-8') . '" />' . "\n"
-              . '    <link rel="image_src" href="' . htmlspecialchars($primaryPhoto, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
+// Foto de capa otimizada do veículo para Meta (WhatsApp, Facebook, Twitter)
+// O WhatsApp exige imagens leves (< 300KB) e formato 1200x630 para carregar a prévia instantaneamente
+$thumbUrl = $baseUrl . '/veiculo_thumb.php?id=' . rawurlencode($found['id']);
 
-// Remove tags og:image existentes para não duplicar
+// Remove TODAS as tags og:image e image_src existentes para garantir que apenas a foto real do carro seja enviada
 $html = preg_replace('/<meta\s+property=["\']og:image["\'][^>]*\/?>\s*/i', '', $html);
 $html = preg_replace('/<meta\s+property=["\']og:image:[^"\']*["\'][^>]*\/?>\s*/i', '', $html);
 $html = preg_replace('/<link\s+rel=["\']image_src["\'][^>]*\/?>\s*/i', '', $html);
+
+$carImageTags = "\n    <!-- FOTO REAL DO VEÍCULO OTIMIZADA PARA META (WHATSAPP, FACEBOOK, INSTAGRAM) -->\n"
+              . '    <meta property="og:image" content="' . htmlspecialchars($thumbUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
+              . '    <meta property="og:image:secure_url" content="' . htmlspecialchars($thumbUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n"
+              . '    <meta property="og:image:type" content="image/jpeg" />' . "\n"
+              . '    <meta property="og:image:width" content="1200" />' . "\n"
+              . '    <meta property="og:image:height" content="630" />' . "\n"
+              . '    <meta property="og:image:alt" content="' . htmlspecialchars("{$marca} {$modelo} {$ano}", ENT_QUOTES, 'UTF-8') . '" />' . "\n"
+              . '    <link rel="image_src" href="' . htmlspecialchars($thumbUrl, ENT_QUOTES, 'UTF-8') . '" />' . "\n";
 
 // Injeta a foto do veículo logo após og:description
 $html = preg_replace('/(<meta\s+property=["\']og:description["\'][^>]*\/?>)/i', '$1' . $carImageTags, $html);
 
 // Atualiza twitter:image
-$html = preg_replace('/<meta\s+name=["\']twitter:image["\']\s+content=["\'][^"\']*["\']\s*\/?>/i', '<meta name="twitter:image" content="' . htmlspecialchars($primaryPhoto, ENT_QUOTES, 'UTF-8') . '" />', $html);
+$html = preg_replace('/<meta\s+name=["\']twitter:image["\']\s+content=["\'][^"\']*["\']\s*\/?>/i', '<meta name="twitter:image" content="' . htmlspecialchars($thumbUrl, ENT_QUOTES, 'UTF-8') . '" />', $html);
 
 // 6. Injeta metadados de produto
 $productMeta = "    <meta property=\"product:price:amount\" content=\"" . $precoNum . "\" />\n"

@@ -452,7 +452,7 @@ export default function SalesView({ sales, vehicles, onRefresh, onSaveSale, onDe
           <div className="max-h-[95vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white p-6 sm:p-8 shadow-2xl print:max-h-none print:shadow-none print:border-none print:p-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
               <div className="flex items-center gap-3">
-                <img src="/logo-japa.png" alt="JAPA Intermediações" className="h-10 object-contain" />
+                <img src="/logo-japa-oficial.png" alt="JAPA Intermediações" className="h-10 object-contain" />
                 <div>
                   <h3 className="font-black text-base text-slate-900">JAPA INTERMEDIAÇÕES</h3>
                   <p className="text-[11px] text-slate-500">CNPJ: 48.650.390/0001-71 • Wenceslau Braz - PR</p>

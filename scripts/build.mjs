@@ -76,10 +76,21 @@ if (fs.existsSync(publicHtmlDir)) {
     fs.copyFileSync(statusPhp, path.join(publicHtmlDir, 'status.php'));
   }
 
-  // Copia veiculo.php atualizado para public_html/veiculo.php
+  // Copia veiculo.php e veiculo_thumb.php atualizados para public_html
   const veiculoPhp = path.join(rootDir, 'veiculo.php');
   if (fs.existsSync(veiculoPhp)) {
     fs.copyFileSync(veiculoPhp, path.join(publicHtmlDir, 'veiculo.php'));
+  }
+  const veiculoThumbPhp = path.join(rootDir, 'veiculo_thumb.php');
+  if (fs.existsSync(veiculoThumbPhp)) {
+    fs.copyFileSync(veiculoThumbPhp, path.join(publicHtmlDir, 'veiculo_thumb.php'));
+  }
+
+  // Copia logos atualizados
+  const logoOficial = path.join(rootDir, 'logo-japa-oficial.png');
+  if (fs.existsSync(logoOficial)) {
+    fs.copyFileSync(logoOficial, path.join(publicHtmlDir, 'logo-japa-oficial.png'));
+    fs.copyFileSync(logoOficial, path.join(publicHtmlDir, 'logo-japa.png'));
   }
 
   // Garante data/settings.json e data/sales.json em public_html/data
