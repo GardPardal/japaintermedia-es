@@ -1,11 +1,15 @@
-﻿import React from 'react';
+import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function FloatingWhatsApp() {
+  const { settings, getWhatsAppUrl } = useSettings();
+  const whatsappUrl = getWhatsAppUrl(`Olá, acessei o site da ${settings.nomeLoja || 'JAPA Intermediações'} e gostaria de atendimento.`);
+
   return (
     <aside aria-label="Atendimento via WhatsApp" className="fixed bottom-5 right-5 z-40">
       <a
-        href="https://wa.me/5543996437966?text=Ol%C3%A1,%20acessei%20o%20site%20da%20JAPA%20Intermedia%C3%A7%C3%B5es%20e%20gostaria%20de%20atendimento."
+        href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Iniciar conversa no WhatsApp"

@@ -3,6 +3,7 @@ import {
   X, Check, Calendar, Gauge, Fuel, Cog, ShieldCheck, 
   MessageCircle, Calculator, ArrowRight, Car, CheckCircle2, Info, Share2
 } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function VehicleDetailModal({ vehicle, onClose }) {
   if (!vehicle) return null;
@@ -22,6 +23,7 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
     };
   }, [onClose]);
 
+  const { settings, getWhatsAppUrl } = useSettings();
   const [activePhoto, setActivePhoto] = useState(0);
   const [activeTab, setActiveTab] = useState('detalhes'); // 'detalhes' | 'simulador' | 'troca'
   
@@ -61,7 +63,7 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await fetch('/api/index.php?endpoint=leads', {
+      await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,7 +71,7 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
           nome: leadName,
           telefone: leadPhone,
           veiculoId: vehicle.id,
-          veiculoNome: `${vehicle.marca} ${vehicle.modelo} ${vehicle.versao}`,
+          veiculoNome: `${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}`.trim(),
           mensagem: leadMsg,
           entrada: downPayment,
           parcelas: installmentsCount,
@@ -80,10 +82,8 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
       });
       setSubmitSuccess(true);
       setTimeout(() => {
-        const whatsappMsg = encodeURIComponent(
-          `Olá Japa Intermediações! Meu nome é ${leadName} (${leadPhone}). Enviei uma proposta pelo site para o ${vehicle.marca} ${vehicle.modelo} (${vehicle.id}): "${leadMsg}"`
-        );
-        window.open(`https://wa.me/5543996437966?text=${whatsappMsg}`, '_blank');
+        const text = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Meu nome é ${leadName} (${leadPhone}). Enviei uma proposta pelo site para o ${vehicle.marca} ${vehicle.modelo} (${vehicle.id}): "${leadMsg}"`;
+        window.open(getWhatsAppUrl(text), '_blank');
       }, 800);
     } catch (err) {
       console.error(err);
@@ -93,14 +93,13 @@ export default function VehicleDetailModal({ vehicle, onClose }) {
   };
 
   const directWhatsapp = () => {
-    const msg = encodeURIComponent(
-      `Olá Japa Intermediações! Gostaria de atendimento exclusivo para o ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao}, ano ${vehicle.anoModelo}, código ${vehicle.id}.`
-    );
-    window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+    const text = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Gostaria de atendimento exclusivo para o ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}, ano ${vehicle.anoModelo}, código ${vehicle.id}.`;
+    window.open(getWhatsAppUrl(text), '_blank');
   };
 
   const shareVehicle = () => {
-    const shareText = `🚗 Olha este ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${vehicle.anoModelo}) na JAPA Intermediações por ${formatBRL(vehicle.preco)} em Wenceslau Braz - PR!\n\nConfira as fotos e detalhes no site:\nhttps://japainter.site/`;
+    const siteUrl = window.location.origin;
+    const shareText = `🚗 Olha este ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} (${vehicle.anoModelo}) na ${settings.nomeLoja || 'JAPA Intermediações'} por ${formatBRL(vehicle.preco)} em ${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}!\n\nConfira as fotos e detalhes no site:\n${siteUrl}/`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
     window.open(whatsappUrl, '_blank');
   };

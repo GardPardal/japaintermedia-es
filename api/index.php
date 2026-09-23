@@ -683,15 +683,22 @@ if ($resource === 'integrations') {
     if ($subResource === 'webmotors' && $action === 'feed.xml') {
         $active = array_filter($vehicles, fn($v) => ($v['status'] ?? '') === 'Disponível' && ($v['webmotorsSync'] ?? true) !== false);
 
+        $settings = getSettings();
+        $storeName = $settings['nomeLoja'] ?? 'Japa Intermediações';
+        $storeCnpj = $settings['cnpj'] ?? '48.650.390/0001-71';
+        $storeCity = $settings['cidade'] ?? 'Wenceslau Braz';
+        $storeUf = $settings['uf'] ?? 'PR';
+        $storePhone = preg_replace('/\D/', '', $settings['whatsapp'] ?? $settings['telefone'] ?? '43996437966');
+
         $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         $xml .= "<estoque>\n";
         $xml .= "  <revenda>\n";
         $xml .= "    <codigo_revenda>JAPA-01</codigo_revenda>\n";
-        $xml .= "    <nome_fantasia>Japa Intermediações</nome_fantasia>\n";
-        $xml .= "    <cnpj>48.650.390/0001-71</cnpj>\n";
-        $xml .= "    <cidade>Wenceslau Braz</cidade>\n";
-        $xml .= "    <uf>PR</uf>\n";
-        $xml .= "    <telefone>43996437966</telefone>\n";
+        $xml .= "    <nome_fantasia>" . escapeXml($storeName) . "</nome_fantasia>\n";
+        $xml .= "    <cnpj>" . escapeXml($storeCnpj) . "</cnpj>\n";
+        $xml .= "    <cidade>" . escapeXml($storeCity) . "</cidade>\n";
+        $xml .= "    <uf>" . escapeXml($storeUf) . "</uf>\n";
+        $xml .= "    <telefone>" . escapeXml($storePhone) . "</telefone>\n";
         $xml .= "    <total_veiculos>" . count($active) . "</total_veiculos>\n";
         $xml .= "    <data_geracao>" . date('c') . "</data_geracao>\n";
         $xml .= "    <veiculos>\n";
@@ -769,14 +776,16 @@ if ($resource === 'integrations') {
             ];
         }
 
+        $settings = getSettings();
         sendJson([
-            'provider' => 'Japa Intermediações PHP API',
+            'provider' => ($settings['nomeLoja'] ?? 'Japa Intermediações') . ' PHP API',
             'revenda' => [
                 'codigo' => 'JAPA-01',
-                'nome' => 'Japa Intermediações',
-                'cidade' => 'Wenceslau Braz',
-                'uf' => 'PR',
-                'telefone' => '(43) 99643-7966'
+                'nome' => $settings['nomeLoja'] ?? 'Japa Intermediações',
+                'cidade' => $settings['cidade'] ?? 'Wenceslau Braz',
+                'uf' => $settings['uf'] ?? 'PR',
+                'telefone' => $settings['telefone'] ?? '(43) 99643-7966',
+                'whatsapp' => $settings['whatsapp'] ?? '43996437966'
             ],
             'generatedAt' => date('c'),
             'count' => count($mapped),

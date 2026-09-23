@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import TopBar from './components/TopBar.jsx';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
@@ -13,6 +13,7 @@ import VehicleDetailModal from './components/VehicleDetailModal.jsx';
 import AdminDashboard from './components/AdminDashboardV2.jsx';
 import AdminLoginModal from './components/AdminLoginModal.jsx';
 import { ArrowRight } from 'lucide-react';
+import { SettingsProvider } from './context/SettingsContext.jsx';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState('/');
@@ -151,129 +152,131 @@ export default function App() {
   const displayedVehicles = showAllStock ? vehicles : vehicles.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-white text-[#101010] flex flex-col font-sans selection:bg-[#E50914] selection:text-white pb-14 md:pb-0">
-      {/* 1. Barra Superior com Wenceslau Braz - PR */}
-      <TopBar />
+    <SettingsProvider>
+      <div className="min-h-screen bg-white text-[#101010] flex flex-col font-sans selection:bg-[#E50914] selection:text-white pb-14 md:pb-0">
+        {/* 1. Barra Superior com Wenceslau Braz - PR */}
+        <TopBar />
 
-      {/* 2. Cabeçalho Fixo */}
-      <Header
-        currentPath={currentPath}
-        onNavigate={handleNavigation}
-      />
+        {/* 2. Cabeçalho Fixo */}
+        <Header
+          currentPath={currentPath}
+          onNavigate={handleNavigation}
+        />
 
-      {/* 3. Hero Principal idêntico ao Mockup */}
-      <Hero
-        onExploreStock={() => handleNavigation('/estoque')}
-        onSellCar={() => handleNavigation('/venda-seu-veiculo')}
-      />
+        {/* 3. Hero Principal idêntico ao Mockup */}
+        <Hero
+          onExploreStock={() => handleNavigation('/estoque')}
+          onSellCar={() => handleNavigation('/venda-seu-veiculo')}
+        />
 
-      {/* 4. Barra de Busca Flutuante Sobreposta em Pílula */}
-      <VehicleSearchBar
-        filterOptions={filterOptions}
-        onSearch={handleSearchFromBar}
-      />
+        {/* 4. Barra de Busca Flutuante Sobreposta em Pílula */}
+        <VehicleSearchBar
+          filterOptions={filterOptions}
+          onSearch={handleSearchFromBar}
+        />
 
-      {/* 5. Seção Veículos em Destaque idêntica ao Mockup */}
-      <section id="estoque" className="pt-14 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        {/* Cabeçalho da Seção */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl sm:text-3xl font-black text-[#101010] tracking-tight">
-            Veículos em destaque
-          </h2>
+        {/* 5. Seção Veículos em Destaque idêntica ao Mockup */}
+        <section id="estoque" className="pt-14 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          {/* Cabeçalho da Seção */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#101010] tracking-tight">
+              Veículos em destaque
+            </h2>
 
-          <button
-            type="button"
-            onClick={() => setShowAllStock(!showAllStock)}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#E50914] hover:text-[#B80710] transition-colors"
-          >
-            <span>{showAllStock ? 'Ver menos' : 'Ver todo o estoque'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Grade de 3 Cards */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-100 rounded-2xl h-80 border border-gray-200" />
-            ))}
-          </div>
-        ) : displayedVehicles.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-10 text-center max-w-lg mx-auto">
-            <h3 className="text-base font-bold text-[#101010] mb-1">Nenhum veículo encontrado</h3>
-            <p className="text-xs text-slate-500 mb-4">Tente buscar por outras marcas ou modelos.</p>
             <button
-              onClick={() => {
-                setActiveSearch({ marca: 'todas', modelo: 'todos', ano: 'todos', preco: 'todos' });
-                setShowAllStock(false);
-              }}
-              className="bg-[#E50914] text-white text-xs font-bold py-2 px-5 rounded-full"
+              type="button"
+              onClick={() => setShowAllStock(!showAllStock)}
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#E50914] hover:text-[#B80710] transition-colors"
             >
-              Restaurar Destaques
+              <span>{showAllStock ? 'Ver menos' : 'Ver todo o estoque'}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayedVehicles.map((vehicle) => (
-              <VehicleCard
-                key={vehicle.id}
-                vehicle={vehicle}
-                onSelectVehicle={(v) => setSelectedVehicle(v)}
-              />
-            ))}
+
+          {/* Grade de 3 Cards */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-gray-100 rounded-2xl h-80 border border-gray-200" />
+              ))}
+            </div>
+          ) : displayedVehicles.length === 0 ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-10 text-center max-w-lg mx-auto">
+              <h3 className="text-base font-bold text-[#101010] mb-1">Nenhum veículo encontrado</h3>
+              <p className="text-xs text-slate-500 mb-4">Tente buscar por outras marcas ou modelos.</p>
+              <button
+                onClick={() => {
+                  setActiveSearch({ marca: 'todas', modelo: 'todos', ano: 'todos', preco: 'todos' });
+                  setShowAllStock(false);
+                }}
+                className="bg-[#E50914] text-white text-xs font-bold py-2 px-5 rounded-full"
+              >
+                Restaurar Destaques
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedVehicles.map((vehicle) => (
+                <VehicleCard
+                  key={vehicle.id}
+                  vehicle={vehicle}
+                  onSelectVehicle={(v) => setSelectedVehicle(v)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 6. Faixa Horizontal de Diferenciais com 4 Ícones */}
+        <DifferentialsSection />
+
+        {/* 7. Dois Banners Promocionais Lado a Lado Fiel ao Mockup */}
+        <div id="venda-seu-veiculo">
+          <div id="financiamento">
+            <HomePromoBanners />
           </div>
-        )}
-      </section>
-
-      {/* 6. Faixa Horizontal de Diferenciais com 4 Ícones */}
-      <DifferentialsSection />
-
-      {/* 7. Dois Banners Promocionais Lado a Lado Fiel ao Mockup */}
-      <div id="venda-seu-veiculo">
-        <div id="financiamento">
-          <HomePromoBanners />
         </div>
+
+        {/* 8. Rodapé Nipo-Moderno Preto */}
+        <Footer
+          onOpenAdmin={handleOpenAdmin}
+          setActiveTab={handleNavigation}
+        />
+
+        {/* 9. Barra Inferior Mobile Flutuante */}
+        <BottomMobileBar
+          onOpenEstoque={() => handleNavigation('/estoque')}
+        />
+
+        {/* 10. Botão WhatsApp Flutuante */}
+        <FloatingWhatsApp />
+
+        {/* Modais */}
+        {selectedVehicle && (
+          <VehicleDetailModal
+            vehicle={selectedVehicle}
+            onClose={() => setSelectedVehicle(null)}
+          />
+        )}
+
+        {loginModalOpen && (
+          <AdminLoginModal
+            onClose={() => setLoginModalOpen(false)}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        )}
+
+        {adminOpen && (
+          <AdminDashboard
+            onClose={() => setAdminOpen(false)}
+            onLogout={handleLogout}
+            onVehicleUpdated={() => {
+              fetchVehicles();
+              fetchOptions();
+            }}
+          />
+        )}
       </div>
-
-      {/* 8. Rodapé Nipo-Moderno Preto */}
-      <Footer
-        onOpenAdmin={handleOpenAdmin}
-        setActiveTab={handleNavigation}
-      />
-
-      {/* 9. Barra Inferior Mobile Flutuante */}
-      <BottomMobileBar
-        onOpenEstoque={() => handleNavigation('/estoque')}
-      />
-
-      {/* 10. Botão WhatsApp Flutuante */}
-      <FloatingWhatsApp />
-
-      {/* Modais */}
-      {selectedVehicle && (
-        <VehicleDetailModal
-          vehicle={selectedVehicle}
-          onClose={() => setSelectedVehicle(null)}
-        />
-      )}
-
-      {loginModalOpen && (
-        <AdminLoginModal
-          onClose={() => setLoginModalOpen(false)}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
-
-      {adminOpen && (
-        <AdminDashboard
-          onClose={() => setAdminOpen(false)}
-          onLogout={handleLogout}
-          onVehicleUpdated={() => {
-            fetchVehicles();
-            fetchOptions();
-          }}
-        />
-      )}
-    </div>
+    </SettingsProvider>
   );
 }

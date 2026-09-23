@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings, Save, KeyRound, ShieldCheck, Download, Store, MapPin, Phone,
   Mail, Clock, Share2, Bell, Check, Loader2, AlertCircle
@@ -27,6 +27,18 @@ export default function SettingsView({ settings, onSaveSettings, vehicles, leads
     ocultarVendidos: Boolean(settings?.ocultarVendidos ?? false),
     garantiaPadrao: settings?.garantiaPadrao || '3 meses (motor e câmbio)'
   }));
+
+  useEffect(() => {
+    if (settings && typeof settings === 'object') {
+      setForm(prev => ({
+        ...prev,
+        ...settings,
+        notificacoesWhatsapp: Boolean(settings.notificacoesWhatsapp ?? prev.notificacoesWhatsapp),
+        notificacoesEmail: Boolean(settings.notificacoesEmail ?? prev.notificacoesEmail),
+        ocultarVendidos: Boolean(settings.ocultarVendidos ?? prev.ocultarVendidos)
+      }));
+    }
+  }, [settings]);
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -185,6 +197,9 @@ export default function SettingsView({ settings, onSaveSettings, vehicles, leads
                 placeholder="43996437966"
                 className="h-10 w-full rounded-xl border border-slate-200 px-3 text-xs outline-none focus:border-[#e50914]"
               />
+              <p className="mt-1 text-[10px] text-slate-400">
+                Recebe as mensagens e propostas do site todo (ex: 43996437966).
+              </p>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">E-mail de Contato</label>

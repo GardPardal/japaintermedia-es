@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, MessageCircle, Phone } from 'lucide-react';
 import Logo from './Logo.jsx';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function Header({ 
   currentPath = '/', 
@@ -33,7 +34,8 @@ export default function Header({
     }
   };
 
-  const whatsappUrl = "https://wa.me/5543996437966?text=" + encodeURIComponent("Olá JAPA Intermediações! Acessei o site e gostaria de atendimento.");
+  const { settings, getWhatsAppUrl } = useSettings();
+  const whatsappUrl = getWhatsAppUrl(`Olá ${settings.nomeLoja || 'JAPA Intermediações'}! Acessei o site e gostaria de atendimento.`);
 
   return (
     <header className={`sticky top-0 z-40 bg-white transition-all duration-300 ${

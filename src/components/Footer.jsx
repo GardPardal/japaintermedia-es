@@ -1,8 +1,11 @@
 import React from 'react';
 import { MapPin, MessageCircle, Instagram, Facebook, Youtube, Lock } from 'lucide-react';
 import Logo from './Logo.jsx';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function Footer({ onOpenAdmin, setActiveTab }) {
+  const { settings, getWhatsAppUrl } = useSettings();
+
   const handleLink = (id) => {
     if (setActiveTab) setActiveTab(id);
     const el = document.getElementById(id);
@@ -11,7 +14,10 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
     }
   };
 
-  const whatsappUrl = "https://wa.me/5543996437966?text=" + encodeURIComponent("Olá JAPA Intermediações! Gostaria de atendimento.");
+  const whatsappUrl = getWhatsAppUrl(`Olá ${settings.nomeLoja || 'JAPA Intermediações'}! Gostaria de atendimento.`);
+  const addressText = `${settings.endereco || 'Avenida Avelino Vieira, 68'}${settings.bairro ? ` - ${settings.bairro}` : ''}`;
+  const cityUfText = `${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}`;
+  const hoursText = `Atendimento: Seg à Sex ${settings.horarioSemana || '08h-18h'} | Sáb ${settings.horarioSabado || '08h-12h30'}`;
 
   return (
     <footer id="contato" className="bg-[#101010] text-[#888888] text-xs pt-12 pb-8 border-t border-[#1C1C1C]">
@@ -22,7 +28,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
           <div className="lg:col-span-2 space-y-3">
             <Logo variant="white" className="h-14 w-fit" />
             <p className="text-slate-400 text-xs font-normal">
-              Sua loja de carros e seminovos em Wenceslau Braz - PR. Conectando você ao melhor negócio com procedência e garantia!
+              Sua loja de carros e seminovos em {cityUfText}. Conectando você ao melhor negócio com procedência e garantia!
             </p>
           </div>
 
@@ -49,10 +55,10 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
             <div className="space-y-1 text-xs">
               <div className="flex items-start gap-1.5 text-white font-medium">
                 <MapPin className="w-3.5 h-3.5 text-[#E50914] flex-shrink-0 mt-0.5" />
-                <span>Avenida Avelino Vieira, 68 - Centro<br /><span className="text-slate-400">Wenceslau Braz - PR</span></span>
+                <span>{addressText}<br /><span className="text-slate-400">{cityUfText}</span></span>
               </div>
               <p className="text-slate-400 text-[11px] pt-1">
-                Atendimento: Seg à Sex 08h-18h | Sáb 08h-12h30
+                {hoursText}
               </p>
             </div>
           </div>
@@ -65,7 +71,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
               </h4>
               <div className="flex items-center gap-3 text-white">
                 <a 
-                  href="https://instagram.com" 
+                  href={settings.instagram || 'https://instagram.com/japaintermediacoes'} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#E50914] flex items-center justify-center transition-colors"
@@ -74,7 +80,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
                   <Instagram className="w-4 h-4" />
                 </a>
                 <a 
-                  href="https://facebook.com" 
+                  href={settings.facebook || 'https://facebook.com/japaintermediacoes'} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-[#E50914] flex items-center justify-center transition-colors"
@@ -114,7 +120,7 @@ export default function Footer({ onOpenAdmin, setActiveTab }) {
 
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} JAPA Intermediações • Loja de Carros em Wenceslau Braz - PR. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} {settings.nomeLoja || 'JAPA Intermediações'} • Loja de Carros em {cityUfText}. Todos os direitos reservados.</p>
           <button
             type="button"
             onClick={onOpenAdmin}

@@ -1,7 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, X, CheckCircle2, AlertCircle, Upload } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function HomePromoBanners() {
+  const { settings, getWhatsAppUrl } = useSettings();
   const [tradeModalOpen, setTradeModalOpen] = useState(false);
   const [financeModalOpen, setFinanceModalOpen] = useState(false);
 
@@ -21,53 +23,51 @@ export default function HomePromoBanners() {
   const [entrada, setEntrada] = useState('');
   const [financeSuccess, setFinanceSuccess] = useState(false);
 
+  const cityUf = `${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}`;
+
   const handleTradeSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch('/api/index.php?endpoint=leads', {
+      await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'avaliacao_troca',
           nome,
           telefone: whatsapp,
-          cidade: 'Wenceslau Braz - PR',
+          cidade: cityUf,
           mensagem: `Avaliação de Troca: ${veiculo} | Ano: ${ano} | KM: ${km} | Pretendido: R$ ${preco}`
         })
       });
     } catch (err) {}
 
     setTradeSuccess(true);
-    const msg = encodeURIComponent(
-      `Olá JAPA Intermediações! Gostaria de uma avaliação para troca/venda:\nNome: ${nome}\nWhatsApp: ${whatsapp}\nVeículo: ${veiculo}\nAno: ${ano}\nKM: ${km}\nPreço pretendido: R$ ${preco}`
-    );
+    const msg = `Olá ${settings.nomeLoja || 'JAPA Intermediações'}! Gostaria de uma avaliação para troca/venda:\nNome: ${nome}\nWhatsApp: ${whatsapp}\nVeículo: ${veiculo}\nAno: ${ano}\nKM: ${km}\nPreço pretendido: R$ ${preco}`;
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+      window.open(getWhatsAppUrl(msg), '_blank');
     }, 800);
   };
 
   const handleFinanceSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch('/api/index.php?endpoint=leads', {
+      await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipo: 'financiamento',
           nome,
           telefone: whatsapp,
-          cidade: 'Wenceslau Braz - PR',
+          cidade: cityUf,
           mensagem: `Simulação de Financiamento: CPF: ${cpf} | Nasc: ${nascimento} | Renda: R$ ${renda} | Entrada: R$ ${entrada}`
         })
       });
     } catch (err) {}
 
     setFinanceSuccess(true);
-    const msg = encodeURIComponent(
-      `Olá JAPA Intermediações! Gostaria de simular um financiamento:\nNome: ${nome}\nWhatsApp: ${whatsapp}\nCPF: ${cpf}\nNascimento: ${nascimento}\nRenda: R$ ${renda}\nEntrada: R$ ${entrada}`
-    );
+    const msg = `Olá ${settings.nomeLoja || 'JAPA Intermediações'}! Gostaria de simular um financiamento:\nNome: ${nome}\nWhatsApp: ${whatsapp}\nCPF: ${cpf}\nNascimento: ${nascimento}\nRenda: R$ ${renda}\nEntrada: R$ ${entrada}`;
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+      window.open(getWhatsAppUrl(msg), '_blank');
     }, 800);
   };
 

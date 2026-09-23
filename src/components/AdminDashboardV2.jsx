@@ -8,6 +8,7 @@ import {
 import SalesView from './admin/SalesView';
 import ReportsView from './admin/ReportsView';
 import SettingsView from './admin/SettingsView';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 const CHANNELS = [
   { key: 'site', label: 'Site', color: 'bg-slate-950' },
@@ -47,6 +48,7 @@ function StatusDot({ tone = 'muted' }) {
 export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }) {
   const [tab, setTab] = useState('stock');
   const [mobileMenu, setMobileMenu] = useState(false);
+  const { settings: globalSettings, saveSettings: globalSaveSettings } = useSettings();
   const [vehicles, setVehicles] = useState([]);
   const [leads, setLeads] = useState([]);
   const [sales, setSales] = useState([]);
@@ -189,15 +191,14 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
   }
 
   async function saveSettings(settingsData) {
-    const res = await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settingsData)
-    });
-    if (!res.ok) throw new Error('Falha ao salvar configurações.');
-    const data = await res.json();
-    setSettings(data.settings);
-    setNotice('Configurações da loja atualizadas com sucesso.');
+    try {
+      const saved = await globalSaveSettings(settingsData);
+      setSettings(saved);
+      setNotice('Configurações da loja atualizadas com sucesso em todo o sistema!');
+    } catch (e) {
+      setNotice(e.message || 'Erro ao salvar configurações.');
+      throw e;
+    }
   }
 
   return (
@@ -284,7 +285,7 @@ export default function AdminDashboardV2({ onClose, onLogout, onVehicleUpdated }
             {!loading && tab === 'leads' && <LeadView leads={leads} />}
             {!loading && tab === 'sales' && <SalesView sales={sales} vehicles={vehicles} onRefresh={loadData} onSaveSale={saveSale} onDeleteSale={deleteSale} />}
             {!loading && tab === 'reports' && <ReportsView reports={reports} sales={sales} vehicles={vehicles} leads={leads} />}
-            {!loading && tab === 'settings' && <SettingsView settings={settings} onSaveSettings={saveSettings} vehicles={vehicles} leads={leads} sales={sales} />}
+            {!loading && tab === 'settings' && <SettingsView settings={settings || globalSettings} onSaveSettings={saveSettings} vehicles={vehicles} leads={leads} sales={sales} />}
             {!loading && tab === 'portals' && <PortalView />}
           </div>
         </main>

@@ -26,6 +26,29 @@ function saveVehicles(vehicles) {
   }
 }
 
+function readSettings() {
+  const paths = [
+    path.join(__dirname, '../data/settings.json'),
+    path.join(__dirname, '../../data/settings.json'),
+    path.join(__dirname, '../../public_html/data/settings.json')
+  ];
+  for (const p of paths) {
+    if (fs.existsSync(p)) {
+      try {
+        return JSON.parse(fs.readFileSync(p, 'utf-8'));
+      } catch (_) {}
+    }
+  }
+  return {
+    nomeLoja: 'JAPA Intermediações',
+    telefone: '(43) 99643-7966',
+    whatsapp: '43996437966',
+    cnpj: '48.650.390/0001-71',
+    cidade: 'Wenceslau Braz',
+    uf: 'PR'
+  };
+}
+
 // Utilitário para escapar caracteres especiais XML
 function escapeXml(unsafe) {
   if (unsafe === undefined || unsafe === null) return '';
@@ -41,15 +64,18 @@ function escapeXml(unsafe) {
 router.get('/webmotors/feed.xml', (req, res) => {
   const vehicles = readVehicles().filter(v => v.status === 'Disponível' && v.webmotorsSync !== false);
 
+  const settings = readSettings();
+  const phone = String(settings.whatsapp || settings.telefone || '43996437966').replace(/\D/g, '');
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<estoque>\n`;
   xml += `  <revenda>\n`;
-  xml += `    <codigo_revenda>BRENZA-WB</codigo_revenda>\n`;
-  xml += `    <nome_fantasia>Brenza Multimarcas</nome_fantasia>\n`;
-  xml += `    <cnpj>48.650.390/0001-71</cnpj>\n`;
-  xml += `    <cidade>Wenceslau Braz</cidade>\n`;
-  xml += `    <uf>PR</uf>\n`;
-  xml += `    <telefone>43996437966</telefone>\n`;
+  xml += `    <codigo_revenda>JAPA-WB</codigo_revenda>\n`;
+  xml += `    <nome_fantasia>${escapeXml(settings.nomeLoja || 'JAPA Intermediações')}</nome_fantasia>\n`;
+  xml += `    <cnpj>${escapeXml(settings.cnpj || '48.650.390/0001-71')}</cnpj>\n`;
+  xml += `    <cidade>${escapeXml(settings.cidade || 'Wenceslau Braz')}</cidade>\n`;
+  xml += `    <uf>${escapeXml(settings.uf || 'PR')}</uf>\n`;
+  xml += `    <telefone>${escapeXml(phone)}</telefone>\n`;
   xml += `    <total_veiculos>${vehicles.length}</total_veiculos>\n`;
   xml += `    <data_geracao>${new Date().toISOString()}</data_geracao>\n`;
   xml += `    <veiculos>\n`;
@@ -105,14 +131,16 @@ router.get('/webmotors/feed.xml', (req, res) => {
 // 2. Webmotors JSON Feed
 router.get('/webmotors/feed.json', (req, res) => {
   const vehicles = readVehicles().filter(v => v.status === 'Disponível' && v.webmotorsSync !== false);
+  const settings = readSettings();
   res.json({
-    provider: "Brenza Multimarcas API",
+    provider: `${settings.nomeLoja || 'JAPA Intermediações'} API`,
     revenda: {
-      codigo: "BRENZA-WB",
-      nome: "Brenza Multimarcas",
-      cidade: "Wenceslau Braz",
-      uf: "PR",
-      telefone: "(43) 99643-7966"
+      codigo: "JAPA-WB",
+      nome: settings.nomeLoja || "JAPA Intermediações",
+      cidade: settings.cidade || "Wenceslau Braz",
+      uf: settings.uf || "PR",
+      telefone: settings.telefone || "(43) 99643-7966",
+      whatsapp: settings.whatsapp || "43996437966"
     },
     generatedAt: new Date().toISOString(),
     count: vehicles.length,

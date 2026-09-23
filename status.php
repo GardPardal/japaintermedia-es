@@ -10,10 +10,20 @@ $isPhpOk = version_compare($phpVersion, '7.4.0', '>=');
 $dataDir = __DIR__ . '/data';
 $vehiclesFile = $dataDir . '/vehicles.json';
 $leadsFile = $dataDir . '/leads.json';
+$settingsFile = $dataDir . '/settings.json';
 
 $isDataDirWritable = is_writable($dataDir);
 $isVehiclesWritable = file_exists($vehiclesFile) ? is_writable($vehiclesFile) : is_writable($dataDir);
 $isLeadsWritable = file_exists($leadsFile) ? is_writable($leadsFile) : is_writable($dataDir);
+$isSettingsWritable = file_exists($settingsFile) ? is_writable($settingsFile) : is_writable($dataDir);
+
+$currentWhatsapp = '';
+if (file_exists($settingsFile)) {
+    $sData = json_decode(file_get_contents($settingsFile), true);
+    if (!empty($sData['whatsapp'])) {
+        $currentWhatsapp = $sData['whatsapp'];
+    }
+}
 
 $vehiclesCount = 0;
 if (file_exists($vehiclesFile)) {
@@ -70,6 +80,13 @@ if (file_exists($vehiclesFile)) {
             <span>Banco de Leads e Propostas</span>
             <span class="badge <?= $isLeadsWritable ? 'badge-success' : 'badge-error' ?>">
                 <?= $isLeadsWritable ? 'OK (Gravável)' : 'Sem permissão' ?>
+            </span>
+        </div>
+
+        <div class="item">
+            <span>Configurações da Loja & WhatsApp (settings.json)</span>
+            <span class="badge <?= $isSettingsWritable ? 'badge-success' : 'badge-error' ?>">
+                <?= $isSettingsWritable ? "OK (WhatsApp ativo: {$currentWhatsapp})" : 'Sem permissão' ?>
             </span>
         </div>
 

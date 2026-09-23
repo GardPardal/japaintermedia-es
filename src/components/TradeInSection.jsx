@@ -1,7 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Car, DollarSign, CheckCircle2, ArrowRight, ShieldCheck, Upload, X, AlertCircle } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function TradeInSection() {
+  const { settings, getWhatsAppUrl } = useSettings();
   const [modalOpen, setModalOpen] = useState(false);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -78,12 +80,10 @@ export default function TradeInSection() {
 
     setSucesso(true);
 
-    const whatsappMsg = encodeURIComponent(
-      `Olá Japa Intermediações! Gostaria de uma avaliação para troca/venda do meu veículo:\n\n*Nome:* ${nome}\n*WhatsApp:* ${telefone}\n*Cidade:* ${cidade || 'Não informada'}\n*Veículo:* ${marcaModelo}\n*Ano:* ${ano}\n*KM:* ${km}\n*Preço pretendido:* R$ ${precoPretendido || 'A combinar'}\n*Observações:* ${observacoes || 'Sem observações'}\n\n${fotos.length > 0 ? `*Fotos anexadas (${fotos.length}):*\n` + fotos.map(f => window.location.origin + f).join('\n') : ''}`
-    );
+    const whatsappMsg = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Gostaria de uma avaliação para troca/venda do meu veículo:\n\n*Nome:* ${nome}\n*WhatsApp:* ${telefone}\n*Cidade:* ${cidade || `${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}`}\n*Veículo:* ${marcaModelo}\n*Ano:* ${ano}\n*KM:* ${km}\n*Preço pretendido:* R$ ${precoPretendido || 'A combinar'}\n*Observações:* ${observacoes || 'Sem observações'}\n\n${fotos.length > 0 ? `*Fotos anexadas (${fotos.length}):*\n` + fotos.map(f => window.location.origin + f).join('\n') : ''}`;
 
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${whatsappMsg}`, '_blank');
+      window.open(getWhatsAppUrl(whatsappMsg), '_blank');
     }, 800);
   };
 

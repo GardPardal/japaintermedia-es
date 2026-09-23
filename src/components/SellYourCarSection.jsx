@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Car, DollarSign, CheckCircle, ArrowRight, Shield, Sparkles } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function SellYourCarSection() {
+  const { settings, getWhatsAppUrl } = useSettings();
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [veiculo, setVeiculo] = useState('');
@@ -10,14 +12,25 @@ export default function SellYourCarSection() {
   const [precoPretendido, setPrecoPretendido] = useState('');
   const [sucesso, setSucesso] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'venda_consignacao',
+          nome,
+          telefone,
+          mensagem: `Venda/Troca: ${veiculo} | Ano: ${ano} | KM: ${km} | Pretendido: R$ ${precoPretendido}`
+        })
+      });
+    } catch (err) {}
+
     setSucesso(true);
-    const msg = encodeURIComponent(
-      `Olá Japa Intermediações! Gostaria de uma avaliação para vender/consignar/trocar meu carro:\nNome: ${nome}\nWhatsApp: ${telefone}\nVeículo: ${veiculo}\nAno: ${ano}\nKM: ${km}\nValor pretendido: R$ ${precoPretendido}`
-    );
+    const msg = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Gostaria de uma avaliação para vender/consignar/trocar meu carro:\nNome: ${nome}\nWhatsApp: ${telefone}\nVeículo: ${veiculo}\nAno: ${ano}\nKM: ${km}\nValor pretendido: R$ ${precoPretendido}`;
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+      window.open(getWhatsAppUrl(msg), '_blank');
     }, 800);
   };
 

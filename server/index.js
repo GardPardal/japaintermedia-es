@@ -221,37 +221,68 @@ app.get('/api/reports', (req, res) => {
 });
 
 // GET & PUT /api/settings - Configurações da loja
+const getSettingsFilePaths = () => [
+  path.join(__dirname, 'data/settings.json'),
+  path.join(__dirname, '../data/settings.json'),
+  path.join(__dirname, '../public_html/data/settings.json')
+];
+
 app.get('/api/settings', (req, res) => {
   try {
-    const settingsPath = path.join(__dirname, 'data/settings.json');
-    if (!fs.existsSync(settingsPath)) {
-      return res.json({
-        nomeLoja: 'JAPA Intermediações',
-        telefone: '(43) 99643-7966',
-        whatsapp: '43996437966',
-        email: 'contato@japaintermediacoes.com.br',
-        cidade: 'Wenceslau Braz',
-        uf: 'PR'
-      });
+    const paths = getSettingsFilePaths();
+    for (const p of paths) {
+      if (fs.existsSync(p)) {
+        const settings = JSON.parse(fs.readFileSync(p, 'utf-8'));
+        return res.json(settings);
+      }
     }
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    res.json(settings);
+    res.json({
+      nomeLoja: 'JAPA Intermediações',
+      telefone: '(43) 99643-7966',
+      whatsapp: '43996437966',
+      email: 'contato@japaintermediacoes.com.br',
+      cidade: 'Wenceslau Braz',
+      uf: 'PR'
+    });
   } catch (e) {
     res.status(500).json({ error: 'Erro ao ler configurações.' });
   }
 });
 
-app.put('/api/settings', (req, res) => {
+const handleSaveSettings = (req, res) => {
   try {
-    const settingsPath = path.join(__dirname, 'data/settings.json');
-    const current = fs.existsSync(settingsPath) ? JSON.parse(fs.readFileSync(settingsPath, 'utf-8')) : {};
+    const paths = getSettingsFilePaths();
+    let current = {};
+    for (const p of paths) {
+      if (fs.existsSync(p)) {
+        try {
+          current = JSON.parse(fs.readFileSync(p, 'utf-8'));
+          break;
+        } catch (_) {}
+      }
+    }
+
     const updated = { ...current, ...req.body };
-    fs.writeFileSync(settingsPath, JSON.stringify(updated, null, 2), 'utf-8');
+    const jsonStr = JSON.stringify(updated, null, 2);
+
+    for (const p of paths) {
+      try {
+        const dir = path.dirname(p);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(p, jsonStr, 'utf-8');
+      } catch (err) {
+        console.warn('Aviso ao sincronizar configurações em:', p, err.message);
+      }
+    }
+
     res.json({ success: true, settings: updated, message: 'Configurações salvas com sucesso.' });
   } catch (e) {
     res.status(500).json({ error: 'Erro ao salvar configurações.' });
   }
-});
+};
+
+app.put('/api/settings', handleSaveSettings);
+app.post('/api/settings', handleSaveSettings);
 
 // POST /api/auth/change-password
 app.post('/api/auth/change-password', (req, res) => {

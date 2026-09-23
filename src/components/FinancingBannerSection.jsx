@@ -1,7 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Landmark, ArrowRight, CheckCircle2, ShieldCheck, Calculator, X, AlertCircle } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function FinancingBannerSection() {
+  const { settings, getWhatsAppUrl } = useSettings();
   const [modalOpen, setModalOpen] = useState(false);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
@@ -56,12 +58,10 @@ export default function FinancingBannerSection() {
 
     setSucesso(true);
 
-    const msg = encodeURIComponent(
-      `Olá Japa Intermediações! Gostaria de simular um financiamento de veículo:\n\n*Nome:* ${nome}\n*CPF:* ${cpf}\n*Nascimento:* ${nascimento}\n*WhatsApp:* ${whatsapp}\n*Cidade:* ${cidade}\n*Renda mensal aproximada:* R$ ${renda}\n*Entrada disponível:* R$ ${entrada}\n*Veículo pretendido:* ${veiculoInteresse || 'Quero ver as opções disponíveis'}`
-    );
+    const msg = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Gostaria de simular um financiamento de veículo:\n\n*Nome:* ${nome}\n*CPF:* ${cpf}\n*Nascimento:* ${nascimento}\n*WhatsApp:* ${whatsapp}\n*Cidade:* ${cidade || `${settings.cidade || 'Wenceslau Braz'} - ${settings.uf || 'PR'}`}\n*Renda mensal aproximada:* R$ ${renda}\n*Entrada disponível:* R$ ${entrada}\n*Veículo pretendido:* ${veiculoInteresse || 'Quero ver as opções disponíveis'}`;
 
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+      window.open(getWhatsAppUrl(msg), '_blank');
     }, 800);
   };
 

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { CreditCard, CheckCircle2, ShieldCheck, ArrowRight, Clock, Percent } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext.jsx';
 
 export default function FinancingSection() {
+  const { settings, getWhatsAppUrl } = useSettings();
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -18,14 +20,25 @@ export default function FinancingSection() {
     { nome: 'Safra Financeira' }
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'financiamento',
+          nome,
+          telefone,
+          mensagem: `Simulação de Financiamento: CPF: ${cpf} | Veículo pretendido: ${veiculoPretendido} | Entrada prevista: R$ ${entrada}`
+        })
+      });
+    } catch (err) {}
+
     setSucesso(true);
-    const msg = encodeURIComponent(
-      `Olá Japa Intermediações! Gostaria de simular um financiamento.\nNome: ${nome}\nTelefone: ${telefone}\nVeículo: ${veiculoPretendido}\nEntrada prevista: R$ ${entrada}`
-    );
+    const msg = `Olá ${settings.nomeLoja || 'Japa Intermediações'}! Gostaria de simular um financiamento.\nNome: ${nome}\nTelefone: ${telefone}\nVeículo: ${veiculoPretendido}\nEntrada prevista: R$ ${entrada}`;
     setTimeout(() => {
-      window.open(`https://wa.me/5543996437966?text=${msg}`, '_blank');
+      window.open(getWhatsAppUrl(msg), '_blank');
     }, 800);
   };
 

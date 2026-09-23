@@ -441,15 +441,26 @@ function getSettings() {
     return is_array($data) ? array_merge($defaultSettings, $data) : $defaultSettings;
 }
 
-/**
- * Salva as configurações da loja
- */
 function saveSettings($settings) {
     if (!is_dir(DATA_DIR)) {
         @mkdir(DATA_DIR, 0755, true);
     }
     $json = json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    return file_put_contents(SETTINGS_FILE, $json, LOCK_EX) !== false;
+    $saved = file_put_contents(SETTINGS_FILE, $json, LOCK_EX) !== false;
+
+    // Também sincroniza com server/data/settings.json se a pasta existir (para ambiente Node local)
+    $serverDataDir = __DIR__ . '/../server/data';
+    if (is_dir($serverDataDir)) {
+        @file_put_contents($serverDataDir . '/settings.json', $json, LOCK_EX);
+    }
+
+    // E sincroniza com public_html/data/settings.json se existir
+    $publicDataDir = __DIR__ . '/../public_html/data';
+    if (is_dir($publicDataDir) && realpath($publicDataDir) !== realpath(DATA_DIR)) {
+        @file_put_contents($publicDataDir . '/settings.json', $json, LOCK_EX);
+    }
+
+    return $saved;
 }
 
 /**
